@@ -10,6 +10,10 @@ import os
 import urllib.error
 import urllib.request
 
+from drought_monitor.env import load_local_env
+
+load_local_env()
+
 RISK_RANGES = "Low is 0–39.9, Medium is 40–64.9, and High is 65–100"
 SYSTEM_PROMPT = (
     "Answer only from the provided dashboard data, in plain language for a "

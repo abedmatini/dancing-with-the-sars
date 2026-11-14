@@ -12,3 +12,4 @@ shapely==2.2.0
 affine==3.0.1
 h5py==3.14.0
 pytest==9.2.0
+python-dotenv==1.2.4

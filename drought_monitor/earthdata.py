@@ -23,6 +23,7 @@ from rasterio.windows import from_bounds
 import xarray as xr
 from shapely.geometry import box
 
+from drought_monitor.env import load_local_env
 from drought_monitor.data import (
     GRID_SHAPE,
     SEEDS,
@@ -33,6 +34,8 @@ from drought_monitor.data import (
     _mock_burn_mask,
     _mock_slope,
 )
+
+load_local_env()
 
 CMR_GRANULES = "https://cmr.earthdata.nasa.gov/search/granules.json"
 POWER_API = "https://power.larc.nasa.gov/api/temporal"

@@ -86,10 +86,10 @@ a warning.
 1. Create a free account at [https://urs.earthdata.nasa.gov/users/new](https://urs.earthdata.nasa.gov/users/new).
 2. In the Earthdata profile, open **Applications** and approve **Alaska Satellite Facility (ASF)** and **LP DAAC** (needed for NISAR granules and, later, MODIS burned area).
 3. Open **Generate Token** and copy the token.
-4. For a local run, export it before starting Streamlit:
+4. For a local run, copy `.env.example` to `.env` and paste the token, or export it before starting Streamlit. `.env` is gitignored. When `python-dotenv` is installed it loads `.env` without overriding variables that are already set. Streamlit Cloud still reads **Secrets** and the process environment.
 
 ```bash
-export EARTHDATA_TOKEN="paste-token-here"
+cp .env.example .env
 streamlit run app.py
 ```
 
@@ -112,11 +112,12 @@ Reboot the app after saving the secret. Do not commit the token.
 | `LLM_BASE_URL` | Optional. Defaults to `https://api.openai.com/v1`. |
 | `LLM_MODEL` | Optional. Defaults to `gpt-4o-mini`. |
 
-Put the same names in `.streamlit/secrets.toml` locally, or in Streamlit Cloud under **App settings > Secrets**. With no language-model key, both buttons still answer from the numbers on the page.
+The same names are listed empty in `.env.example`. Put values in a gitignored `.env` or `.streamlit/secrets.toml` locally, or in Streamlit Cloud under **App settings > Secrets**. With no language-model key, both buttons still answer from the numbers on the page.
 
 ## Project layout
 
 ```text
+.env.example             Empty names for local secrets; copy to .env
 app.py                    Streamlit user interface
 drought_monitor/data.py   Mock generator, data contract, real-loader seam
 exports/summary.json      Reusable deterministic mock summary
