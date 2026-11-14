@@ -4,7 +4,7 @@ __pycache__/
 .streamlit/secrets.toml
 .venv/
 venv/
-.env
-.env.*
 !.env.example
 *.map
+config.bat
+node_modules
