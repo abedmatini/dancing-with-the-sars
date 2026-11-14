@@ -1,4 +1,4 @@
-export type SourceMode = "mock" | "earthdata";
+export type SourceMode = "mock" | "earthdata" | "database";
 
 export type SitePin = {
   id: string;
