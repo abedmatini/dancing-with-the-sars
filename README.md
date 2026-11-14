@@ -57,24 +57,46 @@ python3 scripts/build_web_data.py
 
 This refreshes `exports/summary.json` and the browser assets under `web/data/`.
 
-## Swap in real Earthdata
+## NASA Earthdata in the app
 
-The UI has one data boundary:
+The sidebar has a **Mock / NASA Earthdata** toggle. Both paths return the same
+`SiteData` contract from `load_site_data(site_id, source=...)`.
 
-```python
-load_site_data(site_id, source="mock")
+Without a token, Earthdata mode uses:
+
+- Rainfall: [NASA POWER](https://power.larc.nasa.gov/api/) `PRECTOTCORR`, converted from mm/day to a monthly total, compared with the POWER climatology
+- Soil moisture: NASA POWER `GWETTOP` (MERRA-2 surface wetness), sampled every 12 days
+- Slope: Copernicus DEM GLO-30 from the public AWS COG bucket
+- Burn mask: the seeded mock layer, labeled as mock
+
+`NISAR_L3_SME2_PROVISIONAL_V1` granules do intersect the Cape Town sites. ASF
+serves those HDF5 files only with an Earthdata bearer token. When
+`EARTHDATA_TOKEN` is set, the loader downloads up to six scenes about 12 days
+apart and reads the soil-moisture dataset with `h5py`. If that read fails, or
+there is no token, the page keeps the POWER wetness series and explains why.
+
+If the whole Earthdata load fails, the page falls back to mock data and shows
+a warning.
+
+### Add a free Earthdata token
+
+1. Create a free account at [https://urs.earthdata.nasa.gov/users/new](https://urs.earthdata.nasa.gov/users/new).
+2. In the Earthdata profile, open **Applications** and approve **Alaska Satellite Facility (ASF)** and **LP DAAC** (needed for NISAR granules and, later, MODIS burned area).
+3. Open **Generate Token** and copy the token.
+4. For a local run, export it before starting Streamlit:
+
+```bash
+export EARTHDATA_TOKEN="paste-token-here"
+streamlit run app.py
 ```
 
-Implement `_load_earthdata()` in `drought_monitor/data.py`, then switch the
-source argument to `"earthdata"`. The stub documents the expected adapters:
+5. On Streamlit Community Cloud, open the app, then **Settings** (or **Manage app**) → **Secrets**, and save:
 
-- NISAR GCOV/SME2 HDF5 through `h5py`/`xarray`
-- DEM or slope GeoTIFF through `rasterio`
-- CHIRPS-style rainfall NetCDF/GeoTIFF
-- Site boundary GeoJSON/GPKG through `geopandas`
+```toml
+EARTHDATA_TOKEN = "paste-token-here"
+```
 
-The real loader must return the existing `SiteData` contract, so no map, chart
-or dashboard logic needs source-specific changes.
+Reboot the app after saving the secret. Do not commit the token.
 
 ## Project layout
 

@@ -106,7 +106,17 @@ def load_site_data(
     if source == "mock":
         return _load_mock(site_id)
     if source == "earthdata":
-        return _load_earthdata(site_id)
+        try:
+            return _load_earthdata(site_id)
+        except Exception as exc:
+            site = _load_mock(site_id)
+            site.metadata["source"] = "MOCK fallback after an Earthdata failure"
+            site.metadata["fallback"] = True
+            site.metadata["notice"] = (
+                "NASA Earthdata could not be loaded "
+                f"({type(exc).__name__}: {exc}). Showing the seeded mock dataset."
+            )
+            return site
     raise ValueError(f"Unsupported source: {source!r}")
 
 
@@ -306,7 +316,13 @@ def _calculate_runoff_risk(
     soil: xr.Dataset, slope: xr.DataArray, burn_mask: xr.DataArray
 ) -> xr.Dataset:
     slope_factor = np.clip(slope / 40.0, 0.0, 1.0)
-    wetness_factor = np.clip((soil["soil_moisture"] - 0.10) / 0.24, 0.0, 1.0)
+    moisture = soil["soil_moisture"]
+    # Volumetric water content uses the original 0.10–0.34 m3/m3 window.
+    # A dimensionless wetness fraction, such as MERRA-2 GWETTOP, is already 0–1.
+    if str(moisture.attrs.get("units", "m3 m-3")) == "1":
+        wetness_factor = np.clip(moisture, 0.0, 1.0)
+    else:
+        wetness_factor = np.clip((moisture - 0.10) / 0.24, 0.0, 1.0)
     # Burned terrain has less interception and greater sediment mobility.
     index = 100 * (0.50 * slope_factor + 0.32 * wetness_factor + 0.18 * burn_mask)
     index = index.clip(0, 100).astype("float32").transpose("time", "y", "x")
@@ -352,24 +368,17 @@ def slope_geotiff_bytes(site: SiteData) -> bytes:
 
 
 def _load_earthdata(site_id: str) -> SiteData:
-    """Load real products and normalize them to ``SiteData``.
+    """Load real NASA and Copernicus layers into the ``SiteData`` contract.
 
-    Implementation seam for production:
-
-    * NISAR GCOV/SME2 HDF5: open groups with ``h5py`` or ``xarray``; rename
-      dimensions to ``time, y, x`` and soil moisture to ``soil_moisture``.
-    * DEM/slope GeoTIFF: read values, CRS and affine transform with ``rasterio``.
-    * CHIRPS precipitation: read NetCDF/GeoTIFF and aggregate over the boundary,
-      returning the same five rainfall columns as ``_mock_rainfall``.
-    * Boundaries: read GeoJSON/GPKG with ``geopandas`` and reproject to EPSG:4326.
-
-    No dashboard code should need to change when this function is implemented.
+    NISAR L3 SME2 HDF5 files are read with ``h5py`` when ``EARTHDATA_TOKEN`` is
+    set. Without that token, soil moisture falls back to NASA POWER's MERRA-2
+    surface wetness. Rainfall is NASA POWER. Slope is Copernicus GLO-30.
+    The burn mask stays synthetic and is labeled as mock.
     """
 
-    raise NotImplementedError(
-        f"Earthdata loading is not configured for {site_id!r}. "
-        "Add file paths and normalization logic in drought_monitor/data.py."
-    )
+    from drought_monitor.earthdata import load_earthdata_site
+
+    return load_earthdata_site(site_id)
 
 
 def build_summary() -> dict[str, Any]:

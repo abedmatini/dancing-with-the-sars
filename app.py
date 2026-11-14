@@ -108,8 +108,8 @@ st.markdown(
 
 
 @st.cache_data(show_spinner=False)
-def get_site_data(site_id: str):
-    return load_site_data(site_id, source="mock")
+def get_site_data(site_id: str, source: str = "mock"):
+    return load_site_data(site_id, source=source)
 
 
 RISK_LEGEND = "Low 0–39.9 · Medium 40–64.9 · High 65–100"
@@ -144,19 +144,19 @@ def base_chart_layout(title: str, y_title: str) -> dict:
     }
 
 
-def rainfall_chart(frame: pd.DataFrame) -> go.Figure:
+def rainfall_chart(frame: pd.DataFrame, climatology_name: str) -> go.Figure:
     fig = go.Figure()
     fig.add_bar(
         x=frame["time"],
         y=frame["observed_mm"],
-        name="Observed (mock)",
+        name="Observed",
         marker_color="#0d7d75",
         hovertemplate="%{y:.1f} mm<extra>Observed</extra>",
     )
     fig.add_scatter(
         x=frame["time"],
         y=frame["climatology_mm"],
-        name="1991–2020 climatology",
+        name=climatology_name,
         mode="lines+markers",
         line={"color": "#d5962e", "width": 3},
         hovertemplate="%{y:.1f} mm<extra>Climatology</extra>",
@@ -195,24 +195,29 @@ def soil_chart(site, selected_time: pd.Timestamp) -> go.Figure:
         name="Site mean",
         mode="lines+markers",
         line={"color": "#0d7d75", "width": 3},
-        hovertemplate="%{y:.3f} m³/m³<extra>Site mean</extra>",
+        hovertemplate="%{y:.3f}<extra>Site mean</extra>",
     )
     fig.add_scatter(
         x=[selected_time, selected_time],
-        y=[0.04, 0.39],
+        y=[float(np.nanmin(mean.values)) - 0.02, float(np.nanmax(mean.values)) + 0.02],
         mode="lines",
         name="Selected slider date",
         line={"color": "#c43d3d", "width": 2, "dash": "dot"},
         hovertemplate=f"{selected_time:%d %b %Y}<extra>Selected slider date</extra>",
     )
-    fig.update_layout(**base_chart_layout("NISAR-like soil moisture trend", "Soil moisture (m³/m³)"))
-    fig.update_yaxes(range=[0.04, 0.39])
+    units = site.soil_moisture["soil_moisture"].attrs.get("units", "m3 m-3")
+    y_title = "Soil moisture (m³/m³)" if units == "m3 m-3" else "Surface wetness (fraction)"
+    fig.update_layout(**base_chart_layout(site.soil_moisture.attrs.get("title", "Soil moisture"), y_title))
+    low = float(np.nanmin(mean.values)) - 0.03
+    high = float(np.nanmax(mean.values)) + 0.03
+    fig.update_yaxes(range=[low, high])
     return fig
 
 
 def raster_figure(values: np.ndarray, x: np.ndarray, y: np.ndarray, title: str, kind: str) -> go.Figure:
     if kind == "slope":
-        colorscale, zmin, zmax, label = "Earth", 0, 48, "degrees"
+        colorscale, zmin, label = "Earth", 0, "degrees"
+        zmax = max(48.0, float(np.nanpercentile(values, 99)))
     else:
         colorscale = [[0, "#2b8b67"], [0.4, "#e7c65b"], [0.65, "#e58037"], [1, "#b62f3b"]]
         zmin, zmax, label = 0, 100, "risk index"
@@ -309,22 +314,39 @@ with st.sidebar:
         options=list(names),
         format_func=names.get,
     )
-    st.markdown("---")
-    st.markdown("**Data source**")
-    st.info("MOCK / SYNTHETIC\n\nEarthdata-compatible shapes; no operational decisions.")
+    source_label = st.radio("Data source", ["Mock", "NASA Earthdata"], horizontal=True)
+    source = "earthdata" if source_label == "NASA Earthdata" else "mock"
+
+site = get_site_data(site_id, source)
+available_times = [pd.Timestamp(value) for value in site.soil_moisture.time.values]
+if site.metadata.get("fallback") or source == "mock":
+    hero_chip = "MOCK DATA PROTOTYPE"
+elif site.metadata.get("partial_mock"):
+    hero_chip = "NASA DATA · SOME LAYERS MOCK"
+else:
+    hero_chip = "NASA EARTHDATA"
+
+with st.sidebar:
+    st.markdown("**What is loaded**")
+    if site.metadata.get("fallback"):
+        st.info("MOCK FALLBACK\n\nThe NASA request failed, so this page is synthetic.")
+    elif source == "earthdata":
+        layer_text = "\n".join(
+            f"{name}: {value}" for name, value in site.metadata.get("layers", {}).items()
+        )
+        st.info(f"NASA EARTHDATA\n\n{layer_text}")
+    else:
+        st.info("MOCK / SYNTHETIC\n\nEarthdata-compatible shapes; no operational decisions.")
     st.markdown("**Mission concept**")
     st.caption(
         "A NASA Space Apps 2026 prototype combining L-band soil moisture, "
         "winter rainfall deficits, terrain and fire history."
     )
 
-site = get_site_data(site_id)
-available_times = [pd.Timestamp(value) for value in site.soil_moisture.time.values]
-
 st.markdown(
     f"""
     <div class="hero">
-      <span class="mock-chip">MOCK DATA PROTOTYPE</span>
+      <span class="mock-chip">{hero_chip}</span>
       <h1>Dancing with the SARs</h1>
       <p>Drought stress and runoff-risk signals for Cape Town's fynbos catchments,
       shaped like the NASA Earthdata products that will replace them.</p>
@@ -332,6 +354,10 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+if site.metadata.get("fallback"):
+    st.warning(site.metadata["notice"])
+elif site.metadata.get("notice"):
+    st.info(site.metadata["notice"])
 
 control_col, note_col = st.columns([1.25, 1])
 with control_col:
@@ -368,9 +394,11 @@ latest_rain = site.rainfall.iloc[-1]
 high_area = float((class_slice == 2).mean()) * 100
 
 rain_month = latest_rain.time.strftime("%B %Y")
+uses_power = source == "earthdata" and not site.metadata.get("fallback")
+climatology_name = "POWER climatology" if uses_power else "1991–2020 climatology"
 rain_help = (
     f"{latest_rain.percent_normal:.0f}% is {rain_month} observed rainfall as a "
-    f"percent of that month's 1991–2020 climatology "
+    f"percent of that month's {climatology_name} "
     f"({latest_rain.observed_mm:.1f} mm ÷ {latest_rain.climatology_mm:.1f} mm). "
     f"The {latest_rain.anomaly_mm:.0f} mm figure is the anomaly for the same month: "
     "observed millimetres minus the climatology, rounded to the nearest millimetre. "
@@ -384,8 +412,10 @@ k1.metric(
     f"{latest_rain.anomaly_mm:.0f} mm vs climatology",
     help=rain_help,
 )
-k1.caption(f"{rain_month} percent of the 1991–2020 monthly climatology. Delta: observed minus climatology.")
-k2.metric("Mean soil moisture", f"{mean_soil:.3f} m³/m³", "12-day scene")
+k1.caption(f"{rain_month} percent of the {climatology_name}. Delta: observed minus climatology.")
+soil_units = site.soil_moisture["soil_moisture"].attrs.get("units", "m3 m-3")
+soil_unit_label = "m³/m³" if soil_units == "m3 m-3" else "wetness fraction"
+k2.metric("Mean soil moisture", f"{mean_soil:.3f} {soil_unit_label}", "Selected scene")
 k3.metric(
     "Runoff risk",
     risk_name,
@@ -437,7 +467,11 @@ with context_col:
 st.subheader("Drought signals")
 rain_col, soil_col = st.columns(2)
 with rain_col:
-    st.plotly_chart(rainfall_chart(site.rainfall), width="stretch", theme=None)
+    st.plotly_chart(
+        rainfall_chart(site.rainfall, climatology_name),
+        width="stretch",
+        theme=None,
+    )
 with soil_col:
     st.plotly_chart(soil_chart(site, selected_time), width="stretch", theme=None)
     st.caption(
