@@ -378,15 +378,22 @@ def _read_sme2_window(path: Path, extent) -> np.ndarray:
         handle.visititems(visit)
         if not candidates:
             raise ValueError(f"No soil-moisture dataset in {path.name}")
-        data = np.array(handle[candidates[0]][()], dtype="float32")
         latitudes, longitudes = _coordinate_vectors(handle, candidates[0])
-    if latitudes is None or longitudes is None:
-        raise ValueError("NISAR file has no recognizable latitude/longitude vectors")
-    rows = np.where((latitudes >= south) & (latitudes <= north))[0]
-    cols = np.where((longitudes >= west) & (longitudes <= east))[0]
-    if rows.size == 0 or cols.size == 0:
-        raise ValueError("NISAR grid does not overlap the site extent")
-    window = data[rows.min() : rows.max() + 1, cols.min() : cols.max() + 1]
+        if latitudes is None or longitudes is None:
+            raise ValueError("NISAR file has no recognizable latitude/longitude vectors")
+        rows = np.where((latitudes >= south) & (latitudes <= north))[0]
+        cols = np.where((longitudes >= west) & (longitudes <= east))[0]
+        if rows.size == 0 or cols.size == 0:
+            raise ValueError("NISAR grid does not overlap the site extent")
+        # Read the site window only. The full granule is far larger than the
+        # 512 MB on the free API instance.
+        window = np.array(
+            handle[candidates[0]][
+                int(rows.min()) : int(rows.max()) + 1,
+                int(cols.min()) : int(cols.max()) + 1,
+            ],
+            dtype="float32",
+        )
     window = np.where(window < FILL_VALUE, np.nan, window)
     if not np.isfinite(window).any():
         raise ValueError("NISAR soil-moisture window is empty")
@@ -530,6 +537,16 @@ def _download(url: str, token: str) -> Path:
         url,
         headers={"User-Agent": USER_AGENT, "Authorization": f"Bearer {token}"},
     )
-    with urllib.request.urlopen(request, timeout=180) as response, destination.open("wb") as handle:
-        handle.write(response.read())
+    partial = destination.with_suffix(destination.suffix + ".part")
+    try:
+        with urllib.request.urlopen(request, timeout=180) as response, partial.open("wb") as handle:
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                handle.write(chunk)
+        partial.replace(destination)
+    except Exception:
+        partial.unlink(missing_ok=True)
+        raise
     return destination

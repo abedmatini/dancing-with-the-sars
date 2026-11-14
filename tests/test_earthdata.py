@@ -94,6 +94,28 @@ def test_earthdata_failure_falls_back_to_labeled_mock(monkeypatch):
     assert site.soil_moisture["soil_moisture"].attrs["units"] == "m3 m-3"
 
 
+def test_hdf5_download_writes_in_chunks(monkeypatch, tmp_path):
+    class Body:
+        def __init__(self):
+            self._parts = [b"abc", b"def", b""]
+
+        def read(self, _size=-1):
+            return self._parts.pop(0)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(earthdata.urllib.request, "urlopen", lambda *_args, **_kwargs: Body())
+    monkeypatch.setattr(earthdata, "CACHE_DIR", tmp_path)
+    path = earthdata._download("https://example.com/files/scene.h5", "token")
+    assert path.name == "scene.h5"
+    assert path.read_bytes() == b"abcdef"
+    assert list(tmp_path.glob("*.part")) == []
+
+
 def test_missing_token_is_reported_as_absent(monkeypatch):
     monkeypatch.delenv("EARTHDATA_TOKEN", raising=False)
     assert earthdata.earthdata_token() is None

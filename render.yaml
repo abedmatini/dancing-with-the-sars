@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn globe.api.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn globe.api.main:app --host 0.0.0.0 --port $PORT --limit-concurrency 4
     envVars:
       - key: CORS_ORIGINS
         value: "*"
