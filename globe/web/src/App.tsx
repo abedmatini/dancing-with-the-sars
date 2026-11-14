@@ -25,6 +25,29 @@ function readQuery(): { lat: number; lon: number; date: string | null } | null {
   return { lat, lon, date: params.get("date") };
 }
 
+function LayerButton({
+  on,
+  onClick,
+  activeClass,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  activeClass: string;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      className={`rounded-full px-3 py-2 ${on ? activeClass : "bg-[#0c1522]/90"}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function App() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [offline, setOffline] = useState(false);
@@ -40,6 +63,9 @@ export default function App() {
   const [showFire, setShowFire] = useState(false);
   const [showSoil, setShowSoil] = useState(false);
   const [showSatellites, setShowSatellites] = useState(false);
+  const [showWind, setShowWind] = useState(true);
+  const [showRivers, setShowRivers] = useState(true);
+  const [showRisk, setShowRisk] = useState(true);
   const [flow, setFlow] = useState<FlowPath | null>(null);
   const [wind, setWind] = useState<WindField | null>(null);
   const [busy, setBusy] = useState(false);
@@ -171,7 +197,6 @@ export default function App() {
     const mode = sourceOverride ?? source;
     const token = ++request.current;
     setSpinning(false);
-    setShowDaily(true);
     setBusy(true);
     setFocus({ lat, lon });
     setFlyKey((value) => value + 1);
@@ -214,10 +239,11 @@ export default function App() {
       <Earth
         basemap={basemap}
         pins={pins}
-        grid={panelOpen ? grid : null}
-        flow={panelOpen ? flow : null}
-        wind={panelOpen ? wind : null}
+        grid={grid}
+        flow={showRivers ? flow : null}
+        wind={showWind ? wind : null}
         showSatellites={showSatellites}
+        showRisk={showRisk}
         target={focus ? { ...focus, key: flyKey } : null}
         spinning={spinning}
         showDaily={showDaily}
@@ -306,29 +332,34 @@ export default function App() {
           <button type="button" className="rounded-full bg-[#0c1522]/90 px-3 py-2" onClick={() => setBasemap(basemap === "gibs" ? "osm" : "gibs")}>
             {basemap === "gibs" ? "Blue Marble" : "OpenStreetMap"}
           </button>
-          <button
-            type="button"
-            className={`rounded-full px-3 py-2 ${showDaily ? "bg-sky-300 text-slate-950" : "bg-[#0c1522]/90"}`}
-            onClick={() => setShowDaily((value) => !value)}
-          >
-            Daily MODIS
-          </button>
-          <button type="button" className={`rounded-full px-3 py-2 ${showFire ? "bg-orange-300 text-slate-950" : "bg-[#0c1522]/90"}`} onClick={() => setShowFire((value) => !value)}>
+          <LayerButton on={showDaily} activeClass="bg-sky-300 text-slate-950" onClick={() => setShowDaily((value) => !value)}>
+            Clouds
+          </LayerButton>
+          <LayerButton on={showFire} activeClass="bg-orange-300 text-slate-950" onClick={() => setShowFire((value) => !value)}>
             Fires
-          </button>
-          <button type="button" className={`rounded-full px-3 py-2 ${showSoil ? "bg-lime-300 text-slate-950" : "bg-[#0c1522]/90"}`} onClick={() => setShowSoil((value) => !value)}>
+          </LayerButton>
+          <LayerButton on={showSoil} activeClass="bg-lime-300 text-slate-950" onClick={() => setShowSoil((value) => !value)}>
             Soil moisture
-          </button>
-          <button
-            type="button"
-            className={`rounded-full px-3 py-2 ${showSatellites ? "bg-cyan-300 text-slate-950" : "bg-[#0c1522]/90"}`}
+          </LayerButton>
+          <LayerButton
+            on={showSatellites}
+            activeClass="bg-cyan-300 text-slate-950"
             onClick={() => {
               setSpinning(false);
               setShowSatellites((value) => !value);
             }}
           >
             Satellites
-          </button>
+          </LayerButton>
+          <LayerButton on={showWind} activeClass="bg-slate-100 text-slate-950" onClick={() => setShowWind((value) => !value)}>
+            Wind
+          </LayerButton>
+          <LayerButton on={showRivers} activeClass="bg-sky-200 text-slate-950" onClick={() => setShowRivers((value) => !value)}>
+            Rivers
+          </LayerButton>
+          <LayerButton on={showRisk} activeClass="bg-amber-200 text-slate-950" onClick={() => setShowRisk((value) => !value)}>
+            Risk colors
+          </LayerButton>
         </div>
         {showSatellites ? (
           <p className="pointer-events-auto max-w-xl text-xs text-slate-300">
@@ -373,7 +404,6 @@ export default function App() {
           onClose={() => {
             setPanelOpen(false);
             setPlaying(false);
-            setShowDaily(false);
             tourToken.current += 1;
           }}
         />
