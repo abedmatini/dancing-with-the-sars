@@ -22,7 +22,7 @@ import {
 } from "cesium";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Entity, useCesium, Viewer } from "resium";
-import { baseLayer, fireProvider, modisProvider, soilProvider } from "./imagery";
+import { baseLayer, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
 import type { FlowPath, RiskGrid, SitePin } from "./types";
 import type { WindField } from "./wind";
@@ -296,10 +296,14 @@ function GlobeEffects({
     if (!viewer) return;
     const added: ImageryLayer[] = [];
     if (showDaily) {
-      const layer = viewer.imageryLayers.addImageryProvider(modisProvider());
-      layer.colorToAlpha = Color.BLACK;
-      layer.colorToAlphaThreshold = 0.05;
-      added.push(layer);
+      // Black orbit gaps in one day were showing the blue basemap as stripes.
+      // Earlier days sit underneath and fill those gaps. Near-black pixels are punched out.
+      for (const date of MODIS_TRUE_COLOR_DATES) {
+        const layer = viewer.imageryLayers.addImageryProvider(modisProvider(date));
+        layer.colorToAlpha = Color.BLACK;
+        layer.colorToAlphaThreshold = 0.22;
+        added.push(layer);
+      }
     }
     if (showFire) {
       const layer = viewer.imageryLayers.addImageryProvider(fireProvider());

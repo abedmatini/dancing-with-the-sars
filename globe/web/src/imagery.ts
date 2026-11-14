@@ -8,6 +8,8 @@ import {
 } from "cesium";
 
 const TRUE_COLOR_DATE = "2026-10-15";
+// One MODIS day leaves black gaps between orbits. Earlier days cover those gaps.
+export const MODIS_TRUE_COLOR_DATES = ["2026-10-13", "2026-10-14", TRUE_COLOR_DATE];
 const SOIL_DATE = "2026-05-16";
 const mercator = () => new WebMercatorTilingScheme();
 const credit = (text: string) => new Credit(text);
@@ -31,10 +33,10 @@ export function baseLayer(kind: "gibs" | "osm"): ImageryLayer {
   );
 }
 
-export function modisProvider(): UrlTemplateImageryProvider {
+export function modisProvider(date = TRUE_COLOR_DATE): UrlTemplateImageryProvider {
   return new UrlTemplateImageryProvider({
-    url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${TRUE_COLOR_DATE}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpeg`,
-    credit: credit(`NASA GIBS · MODIS Terra true colour ${TRUE_COLOR_DATE}`),
+    url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpeg`,
+    credit: credit(`NASA GIBS · MODIS Terra true colour ${date}`),
     tilingScheme: mercator(),
     maximumLevel: 8,
   });
