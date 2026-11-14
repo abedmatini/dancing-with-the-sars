@@ -33,6 +33,16 @@ export function baseLayer(kind: "gibs" | "osm"): ImageryLayer {
   );
 }
 
+/** Satellite photo used once the camera is close. Blue Marble stops at a coarse zoom. */
+export function detailProvider(): UrlTemplateImageryProvider {
+  return new UrlTemplateImageryProvider({
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    credit: credit("Esri, Maxar, Earthstar Geographics"),
+    tilingScheme: mercator(),
+    maximumLevel: 16,
+  });
+}
+
 export function modisProvider(date = TRUE_COLOR_DATE): UrlTemplateImageryProvider {
   return new UrlTemplateImageryProvider({
     url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpeg`,

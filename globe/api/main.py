@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from drought_monitor.assistant import answer_question, podcast_script, summarize_view
 from globe.api.rivers import downstream
 from globe.api.serialize import context_for, locate, preset_catalog, risk_grid, scene_payload
+from globe.api.store import stored_grid, stored_scene
 
 app = FastAPI(title="Dancing with the SARs globe", version="1.0.0")
 
@@ -34,16 +35,21 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     lat: float
     lon: float
-    source: Literal["mock", "earthdata"] = "mock"
+    source: Literal["mock", "earthdata", "database"] = "mock"
     date: str | None = None
     question: str = Field(min_length=1, max_length=500)
 
 
 def _view(lat: float, lon: float, source: str, date: str | None) -> dict:
-    if source not in {"mock", "earthdata"}:
-        raise HTTPException(status_code=422, detail="source must be mock or earthdata")
+    if source not in {"mock", "earthdata", "database"}:
+        raise HTTPException(status_code=422, detail="source must be mock, earthdata, or database")
     if not -90 <= lat <= 90 or not -180 <= lon <= 180:
         raise HTTPException(status_code=422, detail="lat/lon out of range")
+    if source == "database":
+        payload = stored_scene(lat, lon, date)
+        if payload is None:
+            raise HTTPException(status_code=404, detail="Nothing is stored for this place.")
+        return payload
     site = locate(lat, lon, source)
     return scene_payload(site, source, date)
 
@@ -62,7 +68,7 @@ def sites() -> dict:
 def site(
     lat: float = Query(...),
     lon: float = Query(...),
-    source: Literal["mock", "earthdata"] = "mock",
+    source: Literal["mock", "earthdata", "database"] = "mock",
     date: str | None = None,
 ) -> dict:
     return _view(lat, lon, source, date)
@@ -72,9 +78,14 @@ def site(
 def grid(
     lat: float = Query(...),
     lon: float = Query(...),
-    source: Literal["mock", "earthdata"] = "mock",
+    source: Literal["mock", "earthdata", "database"] = "mock",
     date: str | None = None,
 ) -> dict:
+    if source == "database":
+        payload = stored_grid(lat, lon, date)
+        if payload is None:
+            raise HTTPException(status_code=404, detail="Nothing is stored for this place.")
+        return payload
     located = locate(lat, lon, source)
     return risk_grid(located, date)
 
@@ -90,7 +101,7 @@ def flow(lat: float = Query(...), lon: float = Query(...)) -> dict:
 def summary(
     lat: float = Query(...),
     lon: float = Query(...),
-    source: Literal["mock", "earthdata"] = "mock",
+    source: Literal["mock", "earthdata", "database"] = "mock",
     date: str | None = None,
 ) -> dict:
     payload = _view(lat, lon, source, date)
@@ -102,7 +113,7 @@ def summary(
 def podcast(
     lat: float = Query(...),
     lon: float = Query(...),
-    source: Literal["mock", "earthdata"] = "mock",
+    source: Literal["mock", "earthdata", "database"] = "mock",
     date: str | None = None,
 ) -> dict:
     payload = _view(lat, lon, source, date)

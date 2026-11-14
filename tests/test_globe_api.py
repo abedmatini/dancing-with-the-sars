@@ -1,11 +1,22 @@
 """Globe API in mock mode. No NASA calls."""
 
+import os
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 from drought_monitor.data import GRID_SHAPE
 from globe.api.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def stored_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("GLOBE_DB_PATH", str(tmp_path / "readings.sqlite"))
+    yield
+    os.environ.pop("GLOBE_DB_PATH", None)
 
 
 def test_health():
@@ -86,3 +97,28 @@ def test_risk_grid_summary_and_chat_without_a_key(monkeypatch):
         json={"lat": 1.0, "lon": 36.0, "source": "mock", "question": "Who won the 2010 World Cup?"},
     ).json()
     assert "not known" in unknown["answer"]
+
+
+def test_database_reads_saved_sites_only(monkeypatch):
+    def explode(*_args, **_kwargs):
+        raise AssertionError("NASA was called")
+
+    monkeypatch.setattr("drought_monitor.earthdata.load_earthdata_site", explode)
+    saved = client.get("/site", params={"lat": -33.9628, "lon": 18.4098, "source": "database"})
+    assert saved.status_code == 200
+    body = saved.json()
+    assert body["source"] == "database"
+    assert body["name"] == "Table Mountain / Cape Peninsula"
+    assert body["layers"]["burn_mask"].startswith("STORED")
+    assert "does not call NASA" in body["notice"]
+
+    grid = client.get(
+        "/risk-grid",
+        params={"lat": -33.9628, "lon": 18.4098, "source": "database", "date": body["dates"][-1]},
+    )
+    assert grid.status_code == 200
+    assert grid.json()["rows"] == GRID_SHAPE[0]
+
+    missing = client.get("/site", params={"lat": 1.234, "lon": 36.543, "source": "database"})
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "Nothing is stored for this place."

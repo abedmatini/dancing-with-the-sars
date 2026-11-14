@@ -22,7 +22,7 @@ import {
 } from "cesium";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Entity, useCesium, Viewer } from "resium";
-import { baseLayer, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
+import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
 import type { FlowPath, RiskGrid, SitePin } from "./types";
 import type { WindField } from "./wind";
@@ -113,8 +113,8 @@ function paintHeat(grid: RiskGrid): HTMLCanvasElement {
   source.height = Math.max(1, grid.rows);
   const sourceContext = source.getContext("2d");
   const output = document.createElement("canvas");
-  output.width = 640;
-  output.height = 640;
+  output.width = Math.max(1, grid.cols) * 16;
+  output.height = Math.max(1, grid.rows) * 16;
   if (!sourceContext) return output;
   const pixels = sourceContext.createImageData(source.width, source.height);
   for (let row = 0; row < source.height; row += 1) {
@@ -130,9 +130,7 @@ function paintHeat(grid: RiskGrid): HTMLCanvasElement {
   sourceContext.putImageData(pixels, 0, 0);
   const outputContext = output.getContext("2d");
   if (!outputContext) return source;
-  outputContext.imageSmoothingEnabled = true;
-  outputContext.imageSmoothingQuality = "high";
-  outputContext.filter = "blur(1.1px)";
+  outputContext.imageSmoothingEnabled = false;
   outputContext.drawImage(source, 0, 0, output.width, output.height);
   return output;
 }
@@ -196,6 +194,7 @@ function driftingPosition(lat: number, lon: number, directionFrom: number, speed
 }
 
 function GlobeEffects({
+  basemap,
   pins,
   target,
   grid,
@@ -208,6 +207,7 @@ function GlobeEffects({
   onPick,
   zoomStep,
 }: {
+  basemap: "gibs" | "osm";
   pins: SitePin[];
   target: FlyTarget | null;
   grid: RiskGrid | null;
@@ -235,6 +235,7 @@ function GlobeEffects({
     viewer.scene.globe.baseColor = Color.fromCssColorString("#102033");
     viewer.scene.globe.enableLighting = false;
     viewer.scene.globe.depthTestAgainstTerrain = true;
+    viewer.scene.globe.maximumScreenSpaceError = 1.1;
   }, [viewer]);
 
   useEffect(() => {
@@ -291,6 +292,23 @@ function GlobeEffects({
     if (inward) viewer.camera.zoomIn(distance);
     else viewer.camera.zoomOut(distance);
   }, [viewer, zoomStep]);
+
+  useEffect(() => {
+    if (!viewer || basemap !== "gibs") return;
+    const layer = viewer.imageryLayers.addImageryProvider(detailProvider());
+    layer.show = false;
+    const update = () => {
+      if (viewer.isDestroyed()) return;
+      layer.show = viewer.camera.positionCartographic.height < 1_200_000;
+    };
+    viewer.camera.percentageChanged = 0.08;
+    const removeChanged = viewer.camera.changed.addEventListener(update);
+    update();
+    return () => {
+      removeChanged();
+      if (!viewer.isDestroyed()) viewer.imageryLayers.remove(layer, true);
+    };
+  }, [viewer, basemap]);
 
   useEffect(() => {
     if (!viewer) return;
@@ -420,6 +438,7 @@ export function Earth({
       skyAtmosphere={false}
     >
       <GlobeEffects
+        basemap={basemap}
         pins={pins}
         target={target}
         grid={grid}
