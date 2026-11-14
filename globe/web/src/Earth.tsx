@@ -12,6 +12,7 @@ import {
   LabelStyle,
   Math as CesiumMath,
   NearFarScalar,
+  PolylineGlowMaterialProperty,
   Rectangle,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
@@ -470,7 +471,9 @@ export function Earth({
           polyline={{
             positions: Cartesian3.fromDegreesArrayHeights(flow.coordinates.flatMap(([lon, lat]) => [lon, lat, 1200])),
             width: 4,
-            material: Color.fromCssColorString("#9ad7ff"),
+            material: new PolylineGlowMaterialProperty({
+              color: Color.fromCssColorString("#9ad7ff"),
+            }),
           }}
         />
       ) : null}
