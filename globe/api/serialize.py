@@ -169,6 +169,7 @@ def context_for(payload: dict) -> dict:
         mean_slope=payload["slope"]["mean"],
         source_mode=payload["source"],
         using_mock=payload["using_mock"],
+        latitude=payload.get("lat"),
     )
 
 

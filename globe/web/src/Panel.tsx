@@ -14,7 +14,8 @@ import {
 import { fetchChat, fetchPodcast, fetchSummary } from "./api";
 import { drynessOutlook } from "./outlook";
 import { briefingScript, sceneCadence, speakBriefing, stopBriefing } from "./podcast";
-import type { ChatTurn, Scene, SourceMode } from "./types";
+import type { ChatTurn, FlowPath, Scene, SourceMode } from "./types";
+import type { WindField } from "./wind";
 
 const chartTip = {
   contentStyle: {
@@ -39,6 +40,8 @@ export function Panel({
   approximate,
   busy,
   source,
+  flow,
+  wind,
   onDate,
   onPlaying,
   onSource,
@@ -51,6 +54,8 @@ export function Panel({
   approximate: boolean;
   busy: boolean;
   source: SourceMode;
+  flow: FlowPath | null;
+  wind: WindField | null;
   onDate: (date: string) => void;
   onPlaying: (playing: boolean) => void;
   onSource: (source: SourceMode) => void;
@@ -64,6 +69,7 @@ export function Panel({
   const [asking, setAsking] = useState(false);
   const [briefing, setBriefing] = useState("");
   const [speaking, setSpeaking] = useState(false);
+  const [voiceNote, setVoiceNote] = useState("");
   const index = Math.max(0, scene.dates.indexOf(date));
   const risk = scene.risk_series.find((row) => row.date === date) ?? scene.risk;
   const soil = scene.soil_moisture.find((row) => row.date === date);
@@ -74,6 +80,7 @@ export function Panel({
     setTurns([]);
     setBriefing("");
     setSpeaking(false);
+    setVoiceNote("");
     stopBriefing();
   }, [scene.id, scene.source]);
 
@@ -85,14 +92,22 @@ export function Panel({
       setSpeaking(false);
       return;
     }
-    const local = briefingScript(scene, date);
+    const local = briefingScript(scene, date, wind?.label);
     setBriefing(local);
     setSpeaking(true);
+    setVoiceNote("Getting a voice…");
     const live = await fetchPodcast(scene.lat, scene.lon, scene.source, date);
-    const script = live?.text?.trim() ? live.text.trim() : local;
+    let script = live?.text?.trim() ? live.text.trim() : local;
+    if (wind?.label && !/wind/i.test(script)) {
+      script = `${script} Wind is ${wind.label}.`;
+    }
     setBriefing(script);
-    speakBriefing(script);
-    window.setTimeout(() => setSpeaking(false), 32_000);
+    try {
+      await speakBriefing(script, setVoiceNote);
+    } finally {
+      setSpeaking(false);
+      setVoiceNote("");
+    }
   }
 
   async function summarize() {
@@ -183,7 +198,21 @@ export function Panel({
           <Metric label="Runoff class" value={risk.class} detail={`${risk.score.toFixed(0)} / 100`} />
           <Metric label="Burned share" value={`${scene.burned_percent.toFixed(1)}%`} detail="of the grid" />
           <Metric label="Mean slope" value={`${scene.slope.mean.toFixed(1)}°`} detail={`${scene.slope.min.toFixed(0)}–${scene.slope.max.toFixed(0)}°`} />
+          <Metric label="Wind" value={wind ? wind.label : "…"} detail={wind ? wind.credit : "Open-Meteo"} />
         </div>
+        <p className="text-[11px] leading-relaxed text-slate-500">
+          The color field is drawn wider than the 5 km box so the pattern is easier to see. The figures stay on that box.
+        </p>
+        <section className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-200/80">Downstream</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-200">
+            {flow ? flow.summary : "Tracing where rain from this spot runs…"}
+          </p>
+          {flow?.rivers.length ? (
+            <p className="mt-2 text-xs text-slate-400">{flow.rivers.map((river) => river.name).join(" · ")}</p>
+          ) : null}
+          {flow ? <p className="mt-2 text-[11px] text-slate-500">{flow.credit}</p> : null}
+        </section>
         <p className="text-xs text-slate-400">{scene.risk.ranges}</p>
         <section className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.06] px-3 py-3">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-200/80">Buying land here?</p>
@@ -246,6 +275,7 @@ export function Panel({
           >
             {speaking ? "Stop briefing" : "Play 30-second briefing"}
           </button>
+          {voiceNote ? <p className="text-xs text-slate-400">{voiceNote}</p> : null}
           {briefing ? <p className="text-sm leading-relaxed text-slate-200">{briefing}</p> : null}
           <button
             type="button"

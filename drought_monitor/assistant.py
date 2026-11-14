@@ -79,6 +79,77 @@ def llm_provider() -> str | None:
     return None
 
 
+_MONTHS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+}
+
+
+def _month_number(label: str) -> int:
+    lowered = label.lower()
+    for name, number in _MONTHS.items():
+        if name in lowered:
+            return number
+    if len(label) >= 7 and label[4:5] == "-":
+        try:
+            return int(label[5:7])
+        except ValueError:
+            return 6
+    return 6
+
+
+def _is_southern(latitude: float | None, coordinates: str) -> bool:
+    if latitude is not None:
+        return latitude < 0
+    head = coordinates.split(",")[0]
+    return "S" in head
+
+
+def season_notes(slider_date: str, latitude: float | None, coordinates: str) -> tuple[str, str]:
+    """Local season, and the farm work that season usually means."""
+
+    month = _month_number(slider_date)
+    southern = _is_southern(latitude, coordinates)
+    if month in (12, 1, 2):
+        season = "summer" if southern else "winter"
+    elif month in (3, 4, 5):
+        season = "autumn" if southern else "spring"
+    elif month in (6, 7, 8):
+        season = "winter" if southern else "summer"
+    else:
+        season = "spring" if southern else "autumn"
+    harvest = (not southern and month in (8, 9, 10, 11)) or (southern and month in (11, 12, 1, 2, 3))
+    if harvest:
+        return (
+            f"It is {season}, and farmers are in harvest.",
+            "A farmer in harvest season times water from the rain and soil.",
+        )
+    if season in {"spring", "autumn"} and month in (3, 4, 5, 9, 10):
+        return (
+            f"It is {season}, when many farmers are planting.",
+            "A farmer at planting times the first water from the rain and soil.",
+        )
+    if season == "summer":
+        return (
+            f"It is {season}, and growers are irrigating.",
+            "A farmer mid-season uses the rain and soil to plan irrigation.",
+        )
+    return (
+        f"It is {season}, a quieter stretch for many crops.",
+        "A farmer in the off-season uses the rain and soil to plan stored water.",
+    )
+
+
 def build_context(
     *,
     site_name: str,
@@ -97,6 +168,7 @@ def build_context(
     mean_slope: float,
     source_mode: str,
     using_mock: bool,
+    latitude: float | None = None,
 ) -> dict:
     """Compact facts the chat and summary are allowed to use."""
 
@@ -117,6 +189,13 @@ def build_context(
         source_clause = (
             "NASA POWER rainfall and soil wetness, Copernicus slope, and a still-mock burn mask"
         )
+    opening, farm_line = season_notes(slider_date, latitude, coordinates)
+    if "lower than" in trend:
+        soil_short = "down since the first scene"
+    elif "higher than" in trend:
+        soil_short = "up since the first scene"
+    else:
+        soil_short = "about the same as the first scene"
     return {
         "site_name": site_name,
         "coordinates": coordinates,
@@ -129,6 +208,9 @@ def build_context(
         "soil_unit": soil_unit,
         "soil_first": soil_first,
         "soil_trend": trend,
+        "soil_short": soil_short,
+        "season_opening": opening,
+        "farm_line": farm_line,
         "risk_score": risk_score,
         "risk_class": risk_class,
         "risk_ranges": RISK_RANGES,
@@ -282,19 +364,18 @@ def answer_question(question: str, context: dict) -> tuple[str, str, str | None]
 def template_podcast(context: dict) -> str:
     """About 30 seconds of speech: who the reading helps, and what the numbers mean."""
 
+    source = "This is the seeded demo" if context["using_mock"] else "This uses the loaded satellite series"
     return (
-        f"Briefing for {context['site_name']} on {context['slider_date']}. "
+        f"{context['site_name']}, {context['slider_date']}. {context['season_opening']} "
         f"Rain is {context['percent_normal']:.0f} percent of normal. "
-        f"Soil moisture is {context['soil_trend']}. "
+        f"Soil is {context['soil_short']}. "
         f"Runoff is {context['risk_class']}, {context['risk_score']:.0f} out of 100. "
-        f"Burned share is {context['burned_percent']:.0f} percent. "
-        f"Mean slope is {context['mean_slope']:.0f} degrees. "
-        "A land buyer uses this to judge whether the ground is drying. "
-        "A grower uses the rain and soil to plan water. "
-        "A fire crew pairs burned share with slope, because steep burned ground sheds sediment after rain. "
-        "An insurer treats the class as today's flag, not a promise. "
-        f"{context['source_sentence']} "
-        "This reading is not a forecast and not advice to buy or walk away."
+        f"Burned share is {context['burned_percent']:.0f} percent, on a {context['mean_slope']:.0f} degree slope. "
+        "A land buyer uses this as a dryness check. "
+        f"{context['farm_line']} "
+        "A fire crew watches steep burned slopes, which shed sediment after rain. "
+        f"An insurer treats {context['risk_class']} as today's flag, not a promise. "
+        f"{source}. This reading is not a climate forecast and not advice to buy or walk away."
     )
 
 
@@ -305,12 +386,13 @@ def podcast_script(context: dict) -> tuple[str, str, str | None]:
     if provider is None:
         return template_podcast(context), "page", None
     prompt = (
-        "Write a spoken briefing of 70 to 85 words, about 30 seconds when read aloud. "
-        "Use only the numbers given. Say what the rainfall, soil trend, runoff class, "
-        "burned share, and slope mean. Say how that helps a land buyer, a grower, "
-        "a fire crew, and an insurer or planner. "
-        "End by saying this is a reading of the loaded series, not a climate forecast "
-        "and not advice to buy or walk away.\n\n"
+        "Write a spoken briefing of 80 to 100 words, about 30 seconds when read aloud. "
+        "Sound like a person briefing a colleague, with contractions. "
+        "Use only the numbers and the season notes given. "
+        "Say what the rainfall, soil, runoff class, burned share, and slope mean. "
+        "Say who it helps: a land buyer, a farmer in that season's work "
+        "(planting, irrigation, or harvest), a fire crew, and an insurer. "
+        "End by saying this is not a climate forecast and not advice to buy or walk away.\n\n"
         + context_block(context)
     )
     try:
