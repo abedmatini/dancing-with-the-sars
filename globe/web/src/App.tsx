@@ -39,6 +39,7 @@ export default function App() {
   const [approximate, setApproximate] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [flyKey, setFlyKey] = useState(0);
+  const [zoomStep, setZoomStep] = useState(0);
   const [focus, setFocus] = useState<{ lat: number; lon: number } | null>(null);
   const [tourLabel, setTourLabel] = useState("");
   const request = useRef(0);
@@ -159,6 +160,7 @@ export default function App() {
         showFire={showFire}
         showSoil={showSoil}
         onStopSpin={() => setSpinning(false)}
+        zoomStep={zoomStep}
         onPick={(lat, lon) => {
           tourToken.current += 1;
           setTourLabel("");
@@ -184,6 +186,26 @@ export default function App() {
             className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
           >
             {spinning ? "Pause rotation" : "Rotate"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSpinning(false);
+              setZoomStep((value) => value + 1);
+            }}
+            className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
+          >
+            Zoom in
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSpinning(false);
+              setZoomStep((value) => value - 1);
+            }}
+            className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
+          >
+            Zoom out
           </button>
           {tourLabel ? <span className="text-sm text-cyan-100">Flying to {tourLabel}</span> : null}
         </div>

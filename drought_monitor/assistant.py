@@ -279,6 +279,46 @@ def answer_question(question: str, context: dict) -> tuple[str, str, str | None]
         return fallback_answer(question, context), "page", _plain_model_error(exc)
 
 
+def template_podcast(context: dict) -> str:
+    """About 30 seconds of speech: who the reading helps, and what the numbers mean."""
+
+    return (
+        f"Briefing for {context['site_name']} on {context['slider_date']}. "
+        f"Rain is {context['percent_normal']:.0f} percent of normal. "
+        f"Soil moisture is {context['soil_trend']}. "
+        f"Runoff is {context['risk_class']}, {context['risk_score']:.0f} out of 100. "
+        f"Burned share is {context['burned_percent']:.0f} percent. "
+        f"Mean slope is {context['mean_slope']:.0f} degrees. "
+        "A land buyer uses this to judge whether the ground is drying. "
+        "A grower uses the rain and soil to plan water. "
+        "A fire crew pairs burned share with slope, because steep burned ground sheds sediment after rain. "
+        "An insurer treats the class as today's flag, not a promise. "
+        f"{context['source_sentence']} "
+        "This reading is not a forecast and not advice to buy or walk away."
+    )
+
+
+def podcast_script(context: dict) -> tuple[str, str, str | None]:
+    """Return a spoken briefing, provider, and error. Never raises."""
+
+    provider = llm_provider()
+    if provider is None:
+        return template_podcast(context), "page", None
+    prompt = (
+        "Write a spoken briefing of 70 to 85 words, about 30 seconds when read aloud. "
+        "Use only the numbers given. Say what the rainfall, soil trend, runoff class, "
+        "burned share, and slope mean. Say how that helps a land buyer, a grower, "
+        "a fire crew, and an insurer or planner. "
+        "End by saying this is a reading of the loaded series, not a climate forecast "
+        "and not advice to buy or walk away.\n\n"
+        + context_block(context)
+    )
+    try:
+        return _claude(prompt), "claude", None
+    except Exception as exc:
+        return template_podcast(context), "page", _plain_model_error(exc)
+
+
 def summarize_view(context: dict) -> tuple[str, str, str | None]:
     """Return a 4–6 sentence summary, provider, and error. Never raises."""
 

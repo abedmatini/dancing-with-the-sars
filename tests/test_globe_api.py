@@ -2,6 +2,7 @@
 
 from fastapi.testclient import TestClient
 
+from drought_monitor.data import GRID_SHAPE
 from globe.api.main import app
 
 client = TestClient(app)
@@ -49,10 +50,10 @@ def test_risk_grid_summary_and_chat_without_a_key(monkeypatch):
         "/risk-grid",
         params={"lat": -33.9628, "lon": 18.4098, "source": "mock", "date": "2026-11-28"},
     ).json()
-    assert grid["rows"] == 9
-    assert grid["cols"] == 10
-    assert len(grid["values"]) == 9
-    assert len(grid["values"][0]) == 10
+    assert grid["rows"] == GRID_SHAPE[0]
+    assert grid["cols"] == GRID_SHAPE[1]
+    assert len(grid["values"]) == GRID_SHAPE[0]
+    assert len(grid["values"][0]) == GRID_SHAPE[1]
 
     summary = client.get(
         "/summary", params={"lat": -33.9628, "lon": 18.4098, "source": "mock"}
@@ -72,6 +73,14 @@ def test_risk_grid_summary_and_chat_without_a_key(monkeypatch):
     ).json()
     assert chat["provider"] == "page"
     assert "%" in chat["answer"]
+    briefing = client.get(
+        "/podcast", params={"lat": -33.9628, "lon": 18.4098, "source": "mock"}
+    ).json()
+    assert briefing["provider"] == "page"
+    assert "land buyer" in briefing["text"]
+    assert "fire crew" in briefing["text"]
+    assert "not a forecast" in briefing["text"]
+
     unknown = client.post(
         "/chat",
         json={"lat": 1.0, "lon": 36.0, "source": "mock", "question": "Who won the 2010 World Cup?"},

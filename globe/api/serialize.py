@@ -17,8 +17,6 @@ from drought_monitor.data import (
 )
 
 RISK_RANGES = "Low 0–39.9 · Medium 40–64.9 · High 65–100"
-GRID_ROWS = 9
-GRID_COLS = 10
 
 
 def preset_catalog() -> dict:
@@ -177,10 +175,11 @@ def context_for(payload: dict) -> dict:
 def risk_grid(site: SiteData, date: str | None) -> dict:
     index = _scene_index(site, date)
     selected = pd.Timestamp(site.soil_moisture.time.values[index])
-    values = np.asarray(site.runoff_risk["risk_index"].isel(time=index).values, dtype="float64")
-    row_index = np.linspace(0, values.shape[0] - 1, GRID_ROWS).astype(int)
-    col_index = np.linspace(0, values.shape[1] - 1, GRID_COLS).astype(int)
-    small = np.nan_to_num(values[np.ix_(row_index, col_index)], nan=0.0)
+    values = np.nan_to_num(
+        np.asarray(site.runoff_risk["risk_index"].isel(time=index).values, dtype="float64"),
+        nan=0.0,
+    )
+    rows, cols = values.shape
     west, south, east, north = [float(value) for value in site.boundary.total_bounds]
     return {
         "date": selected.strftime("%Y-%m-%d"),
@@ -188,9 +187,9 @@ def risk_grid(site: SiteData, date: str | None) -> dict:
         "south": south,
         "east": east,
         "north": north,
-        "rows": GRID_ROWS,
-        "cols": GRID_COLS,
-        "values": [[round(float(item), 1) for item in row] for row in small],
+        "rows": int(rows),
+        "cols": int(cols),
+        "values": [[round(float(item), 1) for item in row] for row in values],
     }
 
 

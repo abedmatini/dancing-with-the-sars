@@ -38,7 +38,7 @@ export function drynessOutlook(scene: Scene): DrynessOutlook {
 
   const direction = monthChange <= -0.005 ? "fell" : monthChange >= 0.005 ? "rose" : "held steady";
   const detail = enough
-    ? `Rain over the last three months was ${Math.round(recentRain)}% of normal (${scene.climatology_name}). Soil moisture ${direction} from ${priorMean.toFixed(3)} to ${recentMean.toFixed(3)} ${scene.soil_unit} across the last month of 12-day scenes.`
+    ? `Rain over the last three months was ${Math.round(recentRain)}% of normal (${scene.climatology_name}). Soil moisture ${direction} from ${priorMean.toFixed(3)} to ${recentMean.toFixed(3)} ${scene.soil_unit} across the last month of scenes.`
     : "This spot needs the June–November scene series before the next month can be read.";
 
   const source = scene.using_mock

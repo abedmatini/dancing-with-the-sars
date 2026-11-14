@@ -3,6 +3,7 @@ import {
   Cartographic,
   Color,
   EllipsoidTerrainProvider,
+  ImageMaterialProperty,
   Ion,
   Math as CesiumMath,
   NearFarScalar,
@@ -61,6 +62,7 @@ function GlobeEffects({
   showSoil,
   onStopSpin,
   onPick,
+  zoomStep,
 }: {
   pins: SitePin[];
   target: FlyTarget | null;
@@ -70,6 +72,7 @@ function GlobeEffects({
   showSoil: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
+  zoomStep: number;
 }) {
   const { viewer } = useCesium();
   const stopRef = useRef(onStopSpin);
@@ -129,11 +132,22 @@ function GlobeEffects({
   useEffect(() => {
     if (!viewer || !target) return;
     viewer.camera.flyTo({
-      destination: Cartesian3.fromDegrees(target.lon, target.lat, 28000),
+      destination: Cartesian3.fromDegrees(target.lon, target.lat, 70000),
       orientation: { heading: 0, pitch: CesiumMath.toRadians(-90), roll: 0 },
       duration: 2.4,
     });
   }, [viewer, target]);
+
+  const zoomSeen = useRef(zoomStep);
+  useEffect(() => {
+    if (!viewer || zoomStep === zoomSeen.current) return;
+    const inward = zoomStep > zoomSeen.current;
+    zoomSeen.current = zoomStep;
+    const height = viewer.camera.positionCartographic.height;
+    const distance = Math.max(400, height * 0.45);
+    if (inward) viewer.camera.zoomIn(distance);
+    else viewer.camera.zoomOut(distance);
+  }, [viewer, zoomStep]);
 
   useEffect(() => {
     if (!viewer) return;
@@ -163,24 +177,33 @@ function GlobeEffects({
   return null;
 }
 
-function cells(grid: RiskGrid) {
-  const lonStep = (grid.east - grid.west) / grid.cols;
-  const latStep = (grid.north - grid.south) / grid.rows;
-  const items: { key: string; west: number; south: number; east: number; north: number; score: number }[] = [];
-  for (let row = 0; row < grid.rows; row += 1) {
-    for (let col = 0; col < grid.cols; col += 1) {
-      const north = grid.north - row * latStep;
-      items.push({
-        key: `${grid.date}-${row}-${col}`,
-        west: grid.west + col * lonStep,
-        east: grid.west + (col + 1) * lonStep,
-        north,
-        south: north - latStep,
-        score: grid.values[row]?.[col] ?? 0,
-      });
+function heatCanvas(grid: RiskGrid): HTMLCanvasElement {
+  const source = document.createElement("canvas");
+  source.width = Math.max(1, grid.cols);
+  source.height = Math.max(1, grid.rows);
+  const sourceContext = source.getContext("2d");
+  const output = document.createElement("canvas");
+  output.width = 256;
+  output.height = 256;
+  if (!sourceContext) return output;
+  const pixels = sourceContext.createImageData(source.width, source.height);
+  for (let row = 0; row < source.height; row += 1) {
+    for (let col = 0; col < source.width; col += 1) {
+      const [red, green, blue, alpha] = riskColor(grid.values[row]?.[col] ?? 0).toBytes();
+      const index = (row * source.width + col) * 4;
+      pixels.data[index] = red;
+      pixels.data[index + 1] = green;
+      pixels.data[index + 2] = blue;
+      pixels.data[index + 3] = alpha;
     }
   }
-  return items;
+  sourceContext.putImageData(pixels, 0, 0);
+  const outputContext = output.getContext("2d");
+  if (!outputContext) return source;
+  outputContext.imageSmoothingEnabled = true;
+  outputContext.imageSmoothingQuality = "high";
+  outputContext.drawImage(source, 0, 0, output.width, output.height);
+  return output;
 }
 
 export function Earth({
@@ -194,6 +217,7 @@ export function Earth({
   showSoil,
   onStopSpin,
   onPick,
+  zoomStep,
 }: {
   basemap: "gibs" | "osm";
   pins: SitePin[];
@@ -205,9 +229,10 @@ export function Earth({
   showSoil: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
+  zoomStep: number;
 }) {
   const imagery = useMemo(() => baseLayer(basemap), [basemap]);
-  const draped = grid ? cells(grid) : [];
+  const heat = useMemo(() => (grid ? heatCanvas(grid) : null), [grid]);
   return (
     <Viewer
       key={basemap}
@@ -236,6 +261,7 @@ export function Earth({
         showSoil={showSoil}
         onStopSpin={onStopSpin}
         onPick={onPick}
+        zoomStep={zoomStep}
       />
       {pins.map((site) => (
         <Entity
@@ -268,16 +294,15 @@ export function Earth({
           }}
         />
       ) : null}
-      {draped.map((cell) => (
+      {grid && heat ? (
         <Entity
-          key={cell.key}
           rectangle={{
-            coordinates: Rectangle.fromDegrees(cell.west, cell.south, cell.east, cell.north),
-            material: riskColor(cell.score),
+            coordinates: Rectangle.fromDegrees(grid.west, grid.south, grid.east, grid.north),
+            material: new ImageMaterialProperty({ image: heat, transparent: true }),
             height: 400,
           }}
         />
-      ))}
+      ) : null}
     </Viewer>
   );
 }
