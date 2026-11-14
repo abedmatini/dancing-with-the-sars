@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { fetchChat, fetchSummary } from "./api";
+import { drynessOutlook } from "./outlook";
 import type { ChatTurn, Scene, SourceMode } from "./types";
 
 const chartTip = {
@@ -96,6 +97,7 @@ export function Panel({
     observed: row.observed_mm,
     normal: row.climatology_mm,
   }));
+  const outlook = drynessOutlook(scene);
 
   return (
     <motion.aside
@@ -159,6 +161,12 @@ export function Panel({
           <Metric label="Mean slope" value={`${scene.slope.mean.toFixed(1)}°`} detail={`${scene.slope.min.toFixed(0)}–${scene.slope.max.toFixed(0)}°`} />
         </div>
         <p className="text-xs text-slate-400">{scene.risk.ranges}</p>
+        <section className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.06] px-3 py-3">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-200/80">Buying land here?</p>
+          <p className="mt-1 text-sm font-medium leading-snug">{outlook.headline}</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300">{outlook.detail}</p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{outlook.note}</p>
+        </section>
         <div>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium">12-day scenes</p>
