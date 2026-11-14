@@ -367,6 +367,7 @@ export function Earth({
   showFire,
   showSoil,
   showSatellites,
+  showRisk,
   onStopSpin,
   onPick,
   zoomStep,
@@ -382,6 +383,7 @@ export function Earth({
   showFire: boolean;
   showSoil: boolean;
   showSatellites: boolean;
+  showRisk: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
   zoomStep: number;
@@ -422,7 +424,7 @@ export function Earth({
         target={target}
         grid={grid}
         spinning={spinning}
-        showDaily={showDaily && basemap === "gibs"}
+        showDaily={showDaily}
         showFire={showFire}
         showSoil={showSoil}
         showSatellites={showSatellites}
@@ -446,7 +448,7 @@ export function Earth({
           }}
         />
       ))}
-      {grid && bounds ? (
+      {showRisk && grid && bounds ? (
         <Entity
           polyline={{
             positions: Cartesian3.fromDegreesArrayHeights([
@@ -461,7 +463,7 @@ export function Earth({
           }}
         />
       ) : null}
-      {grid && bounds && heat ? (
+      {showRisk && grid && bounds && heat ? (
         <Entity
           rectangle={{
             coordinates: Rectangle.fromDegrees(bounds.west, bounds.south, bounds.east, bounds.north),

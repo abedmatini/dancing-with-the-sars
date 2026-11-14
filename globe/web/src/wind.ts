@@ -61,6 +61,23 @@ async function request(url: string) {
   return response.json() as Promise<unknown>;
 }
 
+const MAX_SPEED_KMH = 250;
+
+/** Drop readings that cannot be a 10 m wind arrow, and wrap direction into 0–360. */
+export function cleanArrows(arrows: WindArrow[]): WindArrow[] {
+  const kept: WindArrow[] = [];
+  for (const arrow of arrows) {
+    if (!Number.isFinite(arrow.lat) || !Number.isFinite(arrow.lon)) continue;
+    if (!Number.isFinite(arrow.speed_kmh) || arrow.speed_kmh < 0 || arrow.speed_kmh > MAX_SPEED_KMH) continue;
+    if (!Number.isFinite(arrow.direction_deg)) continue;
+    kept.push({
+      ...arrow,
+      direction_deg: ((arrow.direction_deg % 360) + 360) % 360,
+    });
+  }
+  return kept;
+}
+
 function arrowsFrom(payload: unknown, points: { lat: number; lon: number }[]): WindArrow[] {
   const rows = Array.isArray(payload) ? payload : [payload];
   const arrows: WindArrow[] = [];
@@ -93,11 +110,11 @@ export async function fetchWind(lat: number, lon: number, date: string, box: Box
     let found: WindArrow[] = [];
     let asOf = date;
     if (archive) {
-      found = arrowsFrom(await request(archive), points);
+      found = cleanArrows(arrowsFrom(await request(archive), points));
       asOf = date;
     }
     if (!found.length) {
-      found = arrowsFrom(await request(forecast), points);
+      found = cleanArrows(arrowsFrom(await request(forecast), points));
       asOf = "current";
     }
     if (!found.length) return null;
