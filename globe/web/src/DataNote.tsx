@@ -1,8 +1,34 @@
-const EXAMPLE = {
-  wetness: 0.55,
-  slope: 28,
-  burned: false,
-};
+import { useState } from "react";
+
+const EXAMPLES = [
+  {
+    id: "medium",
+    label: "Medium",
+    wetness: 0.55,
+    slope: 28,
+    burned: false,
+    day: "20260601",
+    note: "Wetness is in the middle and the slope is steep, so the box turns gold.",
+  },
+  {
+    id: "low",
+    label: "Dry day",
+    wetness: 0.15,
+    slope: 8,
+    burned: false,
+    day: "20260912",
+    note: "A dry, gentle slope. Little water and little tilt, so the box stays green.",
+  },
+  {
+    id: "high",
+    label: "Burned slope",
+    wetness: 0.8,
+    slope: 36,
+    burned: true,
+    day: "20260120",
+    note: "Wet ground on a steep burned slope. The burn adds the last share, so the box turns red. That burn flag is still the labeled stand-in, not a NASA field.",
+  },
+] as const;
 
 function runoffScore(wetness: number, slopeDeg: number, burned: boolean): number {
   const slopeFactor = Math.min(1, Math.max(0, slopeDeg / 40));
@@ -22,13 +48,18 @@ function riskClass(score: number): string {
 }
 
 export function DataNote({ onClose }: { onClose: () => void }) {
-  const score = runoffScore(EXAMPLE.wetness, EXAMPLE.slope, EXAMPLE.burned);
+  const [exampleId, setExampleId] = useState<(typeof EXAMPLES)[number]["id"]>("medium");
+  const example = EXAMPLES.find((item) => item.id === exampleId) ?? EXAMPLES[0];
+  const score = runoffScore(example.wetness, example.slope, example.burned);
   const hue = riskHue(score);
+  const raw = example.burned
+    ? `"GWETTOP": { "${example.day}": ${example.wetness.toFixed(2)} }\n"burned": true`
+    : `"GWETTOP": { "${example.day}": ${example.wetness.toFixed(2)} }`;
   return (
     <aside
       role="dialog"
       aria-labelledby="nasa-data-title"
-      className="pointer-events-auto absolute left-3 top-44 z-30 flex max-h-[min(32rem,calc(100%-12rem))] w-[min(24rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c1522]/95 text-slate-100 shadow-2xl backdrop-blur sm:left-4"
+      className="pointer-events-auto absolute left-3 top-44 z-30 flex max-h-[min(36rem,calc(100%-12rem))] w-[min(24rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c1522]/95 text-slate-100 shadow-2xl backdrop-blur sm:left-4"
     >
       <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div>
@@ -50,9 +81,25 @@ export function DataNote({ onClose }: { onClose: () => void }) {
           An Earthdata login can swap in a NISAR soil-moisture scene. Clouds, fires, and the soil picture are separate
           NASA layers. Slope is Copernicus. The burn scar is still a labeled stand-in.
         </p>
+        <div role="tablist" aria-label="Worked examples" className="flex gap-1">
+          {EXAMPLES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={item.id === example.id}
+              onClick={() => setExampleId(item.id)}
+              className={`rounded-full px-3 py-1 text-xs ${
+                item.id === example.id ? "bg-cyan-300 text-slate-950" : "bg-white/5 text-slate-200"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
         <div>
           <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">A raw day, shortened</p>
-          <pre className="mt-1 overflow-x-auto rounded-lg bg-black/40 px-3 py-2 text-xs leading-relaxed text-cyan-100">{`"GWETTOP": { "20260601": 0.55 }`}</pre>
+          <pre className="mt-1 overflow-x-auto rounded-lg bg-black/40 px-3 py-2 text-xs leading-relaxed text-cyan-100">{raw}</pre>
         </div>
         <div className="flex items-center gap-3">
           <span
@@ -61,14 +108,15 @@ export function DataNote({ onClose }: { onClose: () => void }) {
             aria-hidden
           />
           <p>
-            Wetness 0.55, slope 28°, no burn. Half slope, 32% wetness, 18% burn gives{" "}
+            Wetness {example.wetness.toFixed(2)}, slope {example.slope}°, {example.burned ? "burned" : "no burn"}. Half
+            slope, 32% wetness, 18% burn gives{" "}
             <span className="font-medium text-white">
               {score}, {riskClass(score)}
             </span>
-            . Low is green, medium gold, high red.
+            . {example.note}
           </p>
         </div>
-        <p className="text-xs text-slate-400">NASA Earthdata in the study box loads the live series. Mock uses the same color rule.</p>
+        <p className="text-xs text-slate-400">NASA Earthdata in the study box loads the live series. Mock and Database use the same color rule.</p>
       </div>
     </aside>
   );
