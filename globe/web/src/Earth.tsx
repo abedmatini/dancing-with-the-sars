@@ -5,10 +5,12 @@ import {
   EllipsoidTerrainProvider,
   Ion,
   Math as CesiumMath,
+  NearFarScalar,
   Rectangle,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   Terrain,
+  VerticalOrigin,
   type ImageryLayer,
 } from "cesium";
 import { useEffect, useMemo, useRef } from "react";
@@ -20,6 +22,27 @@ const ionToken = import.meta.env.VITE_CESIUM_ION_TOKEN;
 if (ionToken) Ion.defaultAccessToken = ionToken;
 
 const ellipsoidTerrain = new EllipsoidTerrainProvider();
+const pinScale = new NearFarScalar(1.5e6, 1.25, 2.5e7, 0.9);
+
+function pinImage(): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+  ctx.clearRect(0, 0, 64, 64);
+  ctx.beginPath();
+  ctx.arc(32, 32, 24, 0, Math.PI * 2);
+  ctx.fillStyle = "#041018";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(32, 32, 15, 0, Math.PI * 2);
+  ctx.fillStyle = "#7ee7ff";
+  ctx.fill();
+  return canvas;
+}
+
+const pinMarker = pinImage();
 
 type FlyTarget = { lat: number; lon: number; key: number };
 
@@ -62,6 +85,7 @@ function GlobeEffects({
     viewer.scene.backgroundColor = Color.fromCssColorString("#071018");
     viewer.scene.globe.baseColor = Color.fromCssColorString("#102033");
     viewer.scene.globe.enableLighting = false;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
   }, [viewer]);
 
   useEffect(() => {
@@ -218,13 +242,14 @@ export function Earth({
           key={site.id}
           id={site.id}
           name={site.name}
-          position={Cartesian3.fromDegrees(site.lon, site.lat, 2000)}
-          point={{
-            pixelSize: 14,
-            color: Color.fromCssColorString("#7ee7ff"),
-            outlineColor: Color.fromCssColorString("#e8fbff"),
-            outlineWidth: 3,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          position={Cartesian3.fromDegrees(site.lon, site.lat, 80)}
+          billboard={{
+            image: pinMarker,
+            width: 16,
+            height: 16,
+            verticalOrigin: VerticalOrigin.CENTER,
+            scaleByDistance: pinScale,
+            disableDepthTestDistance: 0,
           }}
         />
       ))}
