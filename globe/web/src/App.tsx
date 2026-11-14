@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchCatalog, fetchFlow, fetchGrid, fetchScene } from "./api";
 import { DataNote } from "./DataNote";
+import { MapKey } from "./MapKey";
 import { Earth } from "./Earth";
 import { Panel } from "./Panel";
 import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
@@ -381,12 +382,13 @@ export default function App() {
           <p className="pointer-events-auto max-w-xl rounded-xl bg-rose-400/15 px-3 py-2 text-sm">{bootError}</p>
         ) : null}
       </header>
-      {dataNote ? <DataNote onClose={dismissDataNote} /> : null}
-      {!panelOpen && !dataNote ? (
-        <p className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs text-sm text-slate-300">
-          Click a glowing pin, or anywhere on the Earth, to open a 5 km study box.
-        </p>
-      ) : null}
+      {dataNote ? (
+        <DataNote onClose={dismissDataNote} />
+      ) : (
+        <div className={panelOpen ? "max-md:hidden" : undefined}>
+          <MapKey wind={wind} />
+        </div>
+      )}
       {panelOpen && scene ? (
         <Panel
           scene={scene}
