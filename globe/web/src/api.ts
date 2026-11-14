@@ -1,0 +1,174 @@
+import type { Catalog, DemoFile, RiskGrid, Scene, SourceMode } from "./types";
+
+const configured = import.meta.env.VITE_API_BASE;
+const API_BASE = (configured === undefined || configured === ""
+  ? "http://127.0.0.1:8091"
+  : configured
+).replace(/\/$/, "");
+
+let demoPromise: Promise<DemoFile> | null = null;
+let apiUp: boolean | null = null;
+
+function loadDemo(): Promise<DemoFile> {
+  demoPromise ??= fetch("/demo.json").then((response) => {
+    if (!response.ok) throw new Error("The bundled demo could not be loaded.");
+    return response.json() as Promise<DemoFile>;
+  });
+  return demoPromise;
+}
+
+export async function apiReachable(): Promise<boolean> {
+  if (apiUp !== null) return apiUp;
+  try {
+    const response = await fetch(`${API_BASE}/health`, {
+      signal: AbortSignal.timeout(2500),
+    });
+    apiUp = response.ok;
+  } catch {
+    apiUp = false;
+  }
+  return apiUp;
+}
+
+export async function fetchCatalog(): Promise<{ catalog: Catalog; offline: boolean }> {
+  if (await apiReachable()) {
+    const response = await fetch(`${API_BASE}/sites`);
+    if (response.ok) return { catalog: (await response.json()) as Catalog, offline: false };
+  }
+  const demo = await loadDemo();
+  return { catalog: demo.sites, offline: true };
+}
+
+function nearestDemo(demo: DemoFile, lat: number, lon: number) {
+  let bestId = "";
+  let best = Number.POSITIVE_INFINITY;
+  for (const [id, entry] of Object.entries(demo.scenes)) {
+    const distance = (entry.scene.lat - lat) ** 2 + (entry.scene.lon - lon) ** 2;
+    if (distance < best) {
+      best = distance;
+      bestId = id;
+    }
+  }
+  return demo.scenes[bestId];
+}
+
+function withDate(scene: Scene, date: string | null): Scene {
+  if (!date || !scene.risk_series.some((row) => row.date === date)) return scene;
+  const risk = scene.risk_series.find((row) => row.date === date);
+  const soil = scene.soil_moisture.find((row) => row.date === date);
+  return {
+    ...scene,
+    date,
+    risk: risk ? { ...scene.risk, score: risk.score, class: risk.class } : scene.risk,
+    soil_value: soil ? soil.value : scene.soil_value,
+  };
+}
+
+export async function fetchScene(
+  lat: number,
+  lon: number,
+  source: SourceMode,
+  date: string | null,
+): Promise<{ scene: Scene; offline: boolean; approximate: boolean }> {
+  if (await apiReachable()) {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lon: String(lon),
+      source,
+    });
+    if (date) params.set("date", date);
+    try {
+      const response = await fetch(`${API_BASE}/site?${params}`);
+      if (response.ok) {
+        return { scene: (await response.json()) as Scene, offline: false, approximate: false };
+      }
+    } catch {
+      apiUp = false;
+    }
+  }
+  const demo = await loadDemo();
+  const entry = nearestDemo(demo, lat, lon);
+  const approximate =
+    Math.abs(entry.scene.lat - lat) > 0.05 || Math.abs(entry.scene.lon - lon) > 0.05;
+  return { scene: withDate(entry.scene, date), offline: true, approximate };
+}
+
+export async function fetchGrid(
+  lat: number,
+  lon: number,
+  source: SourceMode,
+  date: string | null,
+): Promise<RiskGrid | null> {
+  if (await apiReachable()) {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lon: String(lon),
+      source,
+    });
+    if (date) params.set("date", date);
+    try {
+      const response = await fetch(`${API_BASE}/risk-grid?${params}`);
+      if (response.ok) return (await response.json()) as RiskGrid;
+    } catch {
+      apiUp = false;
+    }
+  }
+  const demo = await loadDemo();
+  const entry = nearestDemo(demo, lat, lon);
+  if (!entry) return null;
+  if (date && entry.grids[date]) return entry.grids[date];
+  const dates = Object.keys(entry.grids);
+  return entry.grids[dates[dates.length - 1]] ?? null;
+}
+
+export async function fetchSummary(
+  lat: number,
+  lon: number,
+  source: SourceMode,
+  date: string,
+): Promise<{ text: string; error: string | null }> {
+  if (await apiReachable()) {
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lon), source, date });
+    try {
+      const response = await fetch(`${API_BASE}/summary?${params}`);
+      if (response.ok) {
+        const body = (await response.json()) as { text: string; error: string | null };
+        return body;
+      }
+    } catch {
+      apiUp = false;
+    }
+  }
+  return {
+    text: "The summary service is offline. The charts on this page still use the bundled demo.",
+    error: null,
+  };
+}
+
+export async function fetchChat(
+  lat: number,
+  lon: number,
+  source: SourceMode,
+  date: string,
+  question: string,
+): Promise<{ answer: string; error: string | null }> {
+  if (await apiReachable()) {
+    try {
+      const response = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lat, lon, source, date, question }),
+      });
+      if (response.ok) {
+        return (await response.json()) as { answer: string; error: string | null };
+      }
+    } catch {
+      apiUp = false;
+    }
+  }
+  return {
+    answer:
+      "The API is not reachable, so this copy cannot answer from the live numbers. Start the globe API, or read the metric cards in the panel.",
+    error: null,
+  };
+}

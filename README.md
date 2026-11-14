@@ -115,6 +115,34 @@ Reboot the app after saving the secret. Do not commit the token.
 
 The same names are listed empty in `.env.example`. Put values in a gitignored `.env` or `.streamlit/secrets.toml` locally, or in Streamlit Cloud under **App settings > Secrets**. With no language-model key, both buttons still answer from the numbers on the page.
 
+## 3D globe
+
+`globe/web` is a React + Vite globe (Cesium via Resium). `globe/api` is a FastAPI app that calls the same `drought_monitor` loaders as the Streamlit page. The Streamlit app is unchanged.
+
+Imagery is NASA GIBS MODIS true colour, with optional MODIS thermal-anomaly and SMAP soil-moisture layers, and an OpenStreetMap fallback. Cesium ion is optional. With `VITE_CESIUM_ION_TOKEN` unset, the globe uses the WGS84 ellipsoid and those free layers.
+
+From the repository root, with the Python dependencies installed:
+
+```bash
+uvicorn globe.api.main:app --host 127.0.0.1 --port 8091
+```
+
+In another terminal:
+
+```bash
+cd globe/web
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:4178`. The dev server reads `VITE_API_BASE` (default `http://127.0.0.1:8091`). If that API is down, the page uses `globe/web/public/demo.json`. Regenerate the demo after mock-data changes with:
+
+```bash
+python3 scripts/export_globe_demo.py
+```
+
+`globe/PUBLISH.md` has the prompt for publishing the built site to Cursor Apps as `sars-globe`, plus free API hosting on Render (`render.yaml`) or a Hugging Face Docker Space (`globe/Dockerfile`). `scripts/start_globe.sh` serves `globe/web/dist` on `$PORT`. The `Procfile` `web` process still serves the older static dashboard.
+
 ## Project layout
 
 ```text
@@ -123,9 +151,15 @@ app.py                    Streamlit user interface
 drought_monitor/data.py   Mock generator, data contract, real-loader seam
 exports/summary.json      Reusable deterministic mock summary
 web/                      Static Leaflet + Plotly dashboard for Cursor Apps
+globe/web                 3D Cesium globe
+globe/api                 FastAPI over the existing drought_monitor loaders
+globe/PUBLISH.md          Cursor Apps prompt and free API hosting steps
 scripts/build_web_data.py Rebuild static data from the canonical loader
+scripts/export_globe_demo.py  Bundled globe demo JSON
 scripts/start_static.sh   PORT-aware static production start command
+scripts/start_globe.sh    Serves globe/web/dist on $PORT
 Procfile                  Process-host start declaration
+render.yaml               Free Render service for the globe API
 PUBLISH.md                One-step Cursor Apps agent hand-off prompt
 tests/test_data.py        Data shape, determinism and GeoTIFF tests
 tests/test_assistant.py   On-page summary and no-key chat fallback
