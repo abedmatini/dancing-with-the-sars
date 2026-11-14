@@ -76,12 +76,33 @@ function withDate(scene: Scene, date: string | null): Scene {
   };
 }
 
+async function storedError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { detail?: string };
+    if (typeof body.detail === "string" && body.detail) return body.detail;
+  } catch {
+    /* The status is enough. */
+  }
+  return "Nothing is stored for this place.";
+}
+
 export async function fetchScene(
   lat: number,
   lon: number,
   source: SourceMode,
   date: string | null,
 ): Promise<{ scene: Scene; offline: boolean; approximate: boolean }> {
+  if (source === "database") {
+    if (!(await apiReachable())) {
+      throw new Error("Stored readings need the globe API. This button does not use the bundled demo.");
+    }
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lon), source });
+    if (date) params.set("date", date);
+    const response = await fetch(`${API_BASE}/site?${params}`);
+    if (response.status === 404) throw new Error(await storedError(response));
+    if (!response.ok) throw new Error("The stored readings could not be loaded.");
+    return { scene: (await response.json()) as Scene, offline: false, approximate: false };
+  }
   if (await apiReachable()) {
     const params = new URLSearchParams({
       lat: String(lat),
@@ -107,6 +128,14 @@ export async function fetchGrid(
   source: SourceMode,
   date: string | null,
 ): Promise<RiskGrid | null> {
+  if (source === "database") {
+    if (!(await apiReachable())) return null;
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lon), source });
+    if (date) params.set("date", date);
+    const response = await fetch(`${API_BASE}/risk-grid?${params}`);
+    if (!response.ok) return null;
+    return (await response.json()) as RiskGrid;
+  }
   if (await apiReachable()) {
     const params = new URLSearchParams({
       lat: String(lat),

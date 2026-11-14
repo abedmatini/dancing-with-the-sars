@@ -204,6 +204,7 @@ export default function App() {
     try {
       const result = await fetchScene(lat, lon, mode, requestedDate);
       if (token !== request.current) return;
+      setBootError("");
       setScene(result.scene);
       setOffline(result.offline);
       setApproximate(result.approximate);
@@ -215,6 +216,11 @@ export default function App() {
     } catch (error) {
       if (token === request.current) {
         setBootError(error instanceof Error ? error.message : "This location could not be loaded.");
+        if (mode === "database") {
+          setScene(null);
+          setGrid(null);
+          setPanelOpen(false);
+        }
       }
     } finally {
       if (token === request.current) setBusy(false);

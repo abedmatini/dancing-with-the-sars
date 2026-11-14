@@ -166,21 +166,33 @@ export function Panel({
         {offline ? (
           <p className="text-xs text-slate-400">Bundled demo. Live NASA calls need the globe API.</p>
         ) : null}
-        <div className="flex gap-2">
-          {(["mock", "earthdata"] as const).map((mode) => (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["mock", "Mock"],
+              ["earthdata", "NASA Earthdata"],
+              ["database", "Database"],
+            ] as const
+          ).map(([mode, label]) => (
             <button
               key={mode}
               type="button"
+              aria-pressed={source === mode}
               onClick={() => onSource(mode)}
               className={`rounded-full px-3 py-1 text-xs ${
                 source === mode ? "bg-cyan-300 text-slate-950" : "bg-white/5 text-slate-200"
               }`}
             >
-              {mode === "mock" ? "Mock" : "NASA Earthdata"}
+              {label}
             </button>
           ))}
           {busy ? <span className="self-center text-xs text-slate-400">Loading…</span> : null}
         </div>
+        {source === "database" ? (
+          <p className="text-xs text-slate-400">
+            Stored study sites only. This button does not call NASA. A place with no saved row stays empty.
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(scene.layers).map(([key, label]) => (
             <span key={key} className={`rounded-full px-2 py-1 text-[11px] ${badgeTone(label)}`}>
