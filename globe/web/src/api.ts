@@ -1,10 +1,10 @@
 import type { Catalog, DemoFile, RiskGrid, Scene, SourceMode } from "./types";
 
 const configured = import.meta.env.VITE_API_BASE;
-const API_BASE = (configured === undefined || configured === ""
-  ? "http://127.0.0.1:8091"
-  : configured
-).replace(/\/$/, "");
+const fallback = import.meta.env.PROD
+  ? "https://sars-globe-api.onrender.com"
+  : "http://127.0.0.1:8091";
+const API_BASE = (configured === undefined || configured === "" ? fallback : configured).replace(/\/$/, "");
 
 let demoPromise: Promise<DemoFile> | null = null;
 let apiUp: boolean | null = null;
@@ -21,7 +21,7 @@ export async function apiReachable(): Promise<boolean> {
   if (apiUp !== null) return apiUp;
   try {
     const response = await fetch(`${API_BASE}/health`, {
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(75_000),
     });
     apiUp = response.ok;
   } catch {
@@ -30,10 +30,22 @@ export async function apiReachable(): Promise<boolean> {
   return apiUp;
 }
 
+async function fetchOk(url: string, init?: RequestInit): Promise<Response | null> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url, init);
+      if (response.ok) return response;
+    } catch {
+      // A free Render instance can drop the first call while it wakes.
+    }
+  }
+  return null;
+}
+
 export async function fetchCatalog(): Promise<{ catalog: Catalog; offline: boolean }> {
   if (await apiReachable()) {
-    const response = await fetch(`${API_BASE}/sites`);
-    if (response.ok) return { catalog: (await response.json()) as Catalog, offline: false };
+    const response = await fetchOk(`${API_BASE}/sites`);
+    if (response) return { catalog: (await response.json()) as Catalog, offline: false };
   }
   const demo = await loadDemo();
   return { catalog: demo.sites, offline: true };
@@ -77,13 +89,9 @@ export async function fetchScene(
       source,
     });
     if (date) params.set("date", date);
-    try {
-      const response = await fetch(`${API_BASE}/site?${params}`);
-      if (response.ok) {
-        return { scene: (await response.json()) as Scene, offline: false, approximate: false };
-      }
-    } catch {
-      apiUp = false;
+    const response = await fetchOk(`${API_BASE}/site?${params}`);
+    if (response) {
+      return { scene: (await response.json()) as Scene, offline: false, approximate: false };
     }
   }
   const demo = await loadDemo();
@@ -106,12 +114,8 @@ export async function fetchGrid(
       source,
     });
     if (date) params.set("date", date);
-    try {
-      const response = await fetch(`${API_BASE}/risk-grid?${params}`);
-      if (response.ok) return (await response.json()) as RiskGrid;
-    } catch {
-      apiUp = false;
-    }
+    const response = await fetchOk(`${API_BASE}/risk-grid?${params}`);
+    if (response) return (await response.json()) as RiskGrid;
   }
   const demo = await loadDemo();
   const entry = nearestDemo(demo, lat, lon);
@@ -129,14 +133,9 @@ export async function fetchSummary(
 ): Promise<{ text: string; error: string | null }> {
   if (await apiReachable()) {
     const params = new URLSearchParams({ lat: String(lat), lon: String(lon), source, date });
-    try {
-      const response = await fetch(`${API_BASE}/summary?${params}`);
-      if (response.ok) {
-        const body = (await response.json()) as { text: string; error: string | null };
-        return body;
-      }
-    } catch {
-      apiUp = false;
+    const response = await fetchOk(`${API_BASE}/summary?${params}`);
+    if (response) {
+      return (await response.json()) as { text: string; error: string | null };
     }
   }
   return {
@@ -153,17 +152,13 @@ export async function fetchChat(
   question: string,
 ): Promise<{ answer: string; error: string | null }> {
   if (await apiReachable()) {
-    try {
-      const response = await fetch(`${API_BASE}/chat`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ lat, lon, source, date, question }),
-      });
-      if (response.ok) {
-        return (await response.json()) as { answer: string; error: string | null };
-      }
-    } catch {
-      apiUp = false;
+    const response = await fetchOk(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ lat, lon, source, date, question }),
+    });
+    if (response) {
+      return (await response.json()) as { answer: string; error: string | null };
     }
   }
   return {
