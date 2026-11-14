@@ -18,6 +18,7 @@ from drought_monitor.assistant import (
 def _context(**overrides):
     values = dict(
         site_name="Table Mountain / Cape Peninsula fynbos",
+        coordinates="33.96°S, 18.41°E",
         slider_date="28 November 2026",
         rain_month="November 2026",
         percent_normal=72.0,
@@ -47,6 +48,7 @@ def test_template_summary_covers_the_view():
     sentences = _sentences(summary)
     assert 4 <= len(sentences) <= 6
     assert "28 November 2026" in summary
+    assert "33.96°S, 18.41°E" in summary
     assert "72%" in summary
     assert "1991–2020 climatology" in summary
     assert "lower than the first scene" in summary

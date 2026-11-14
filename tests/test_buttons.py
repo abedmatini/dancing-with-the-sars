@@ -48,7 +48,7 @@ def test_summary_clears_when_the_site_changes(monkeypatch):
     app = _app(monkeypatch)
     app.button(key="summarize_view").click().run()
     assert "Table Mountain" in app.session_state["view_summary"]
-    app.selectbox[0].set_value("cape_flats").run()
+    app.selectbox(key="study_site_local").set_value("cape_flats").run()
     assert not app.exception, app.exception
     assert "view_summary" not in app.session_state
 

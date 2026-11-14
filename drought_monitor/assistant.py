@@ -82,6 +82,7 @@ def llm_provider() -> str | None:
 def build_context(
     *,
     site_name: str,
+    coordinates: str,
     slider_date: str,
     rain_month: str,
     percent_normal: float,
@@ -118,6 +119,7 @@ def build_context(
         )
     return {
         "site_name": site_name,
+        "coordinates": coordinates,
         "slider_date": slider_date,
         "rain_month": rain_month,
         "percent_normal": percent_normal,
@@ -150,7 +152,7 @@ def build_context(
 def context_block(context: dict) -> str:
     return "\n".join(
         [
-            f"Site: {context['site_name']}",
+            f"Site: {context['site_name']} ({context['coordinates']})",
             f"Slider date: {context['slider_date']}",
             (
                 f"Rainfall: {context['rain_month']} is {context['percent_normal']:.0f}% of "
@@ -192,8 +194,8 @@ def template_summary(context: dict) -> str:
 
     sentences = [
         (
-            f"On {context['slider_date']}, {context['site_name']} is shown with "
-            f"{context['source_clause']}."
+            f"On {context['slider_date']}, {context['site_name']} "
+            f"({context['coordinates']}) is shown with {context['source_clause']}."
         ),
         (
             f"Rainfall for {context['rain_month']} is {context['percent_normal']:.0f}% of the "

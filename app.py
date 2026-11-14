@@ -23,9 +23,14 @@ from drought_monitor.assistant import (
     summarize_view,
 )
 from drought_monitor.data import (
+    GROUP_GLOBAL,
+    GROUP_LOCAL,
+    SITE_CONFIGS,
     build_summary,
-    list_sites,
+    format_coordinates,
     load_site_data,
+    register_custom_site,
+    sites_by_group,
     slope_geotiff_bytes,
 )
 
@@ -274,25 +279,31 @@ def site_map(site, risk_values: np.ndarray) -> folium.Map:
         tiles="OpenStreetMap",
         control_scale=True,
     )
-    for site_id in list_sites():
-        map_site = get_site_data(site_id)
-        selected = site_id == site.site_id
-        west, south, east, north = map_site.boundary.total_bounds
+    outlines = [
+        (site_id, config["name"], config["center"], config["extent"])
+        for site_id, config in SITE_CONFIGS.items()
+    ]
+    if site.site_id not in SITE_CONFIGS:
+        west, south, east, north = site.boundary.total_bounds
+        outlines.append((site.site_id, site.name, site.center, (west, south, east, north)))
+    for outline_id, outline_name, center, extent in outlines:
+        selected = outline_id == site.site_id
+        west, south, east, north = extent
         folium.Rectangle(
             bounds=[[south, west], [north, east]],
             color="#0d7d75" if selected else "#708b86",
             weight=3 if selected else 1.5,
             fill=False,
-            tooltip=map_site.name,
+            tooltip=outline_name,
         ).add_to(fmap)
         folium.CircleMarker(
-            map_site.center,
+            center,
             radius=7 if selected else 5,
             color="#102f31",
             fill=True,
             fill_color="#f1c972" if selected else "#6da79d",
             fill_opacity=1,
-            tooltip=f"{map_site.name} · {'selected' if selected else 'study site'}",
+            tooltip=f"{outline_name} · {'selected' if selected else 'study site'}",
         ).add_to(fmap)
 
     west, south, east, north = site.boundary.total_bounds
@@ -317,16 +328,37 @@ def site_map(site, risk_values: np.ndarray) -> folium.Map:
 with st.sidebar:
     st.markdown("### 🛰️ Dancing with the SARs")
     st.caption("NISAR drought + runoff intelligence")
-    names = list_sites()
-    site_id = st.selectbox(
+    grouped = sites_by_group()
+    region = st.selectbox("Region", [GROUP_LOCAL, GROUP_GLOBAL], key="region")
+    site_widget = "study_site_local" if region == GROUP_LOCAL else "study_site_global"
+    preset_id = st.selectbox(
         "Study site",
-        options=list(names),
-        format_func=names.get,
+        options=list(grouped[region]),
+        format_func=grouped[region].get,
+        key=site_widget,
     )
+    if st.session_state.get("custom_site_id"):
+        st.caption("A custom map location is active.")
+        if st.button("Back to presets", key="back_to_presets"):
+            st.session_state.custom_site_id = None
+            st.rerun()
     source_label = st.radio("Data source", ["Mock", "NASA Earthdata"], horizontal=True)
     source = "earthdata" if source_label == "NASA Earthdata" else "mock"
 
-site = get_site_data(site_id, source)
+if "chosen_preset" not in st.session_state:
+    st.session_state.chosen_preset = preset_id
+elif preset_id != st.session_state.chosen_preset:
+    st.session_state.chosen_preset = preset_id
+    st.session_state.custom_site_id = None
+
+site_id = st.session_state.get("custom_site_id") or preset_id
+load_label = (
+    "Loading NASA POWER, Copernicus slope, and the NISAR search…"
+    if source == "earthdata"
+    else "Building seeded mock data…"
+)
+with st.spinner(load_label):
+    site = get_site_data(site_id, source)
 available_times = [pd.Timestamp(value) for value in site.soil_moisture.time.values]
 if site.metadata.get("fallback") or source == "mock":
     hero_chip = "MOCK DATA PROTOTYPE"
@@ -345,7 +377,10 @@ with st.sidebar:
         )
         st.info(f"NASA EARTHDATA\n\n{layer_text}")
     else:
-        st.info("MOCK / SYNTHETIC\n\nEarthdata-compatible shapes; no operational decisions.")
+        layer_text = "\n".join(
+            f"{name}: {value}" for name, value in site.metadata.get("layers", {}).items()
+        )
+        st.info(f"MOCK / SYNTHETIC\n\n{layer_text}")
     if not earthdata_credentials_present():
         st.caption(
             "No EARTHDATA_TOKEN is set, so NISAR files stay on NASA's servers. "
@@ -454,6 +489,7 @@ k4.metric("High-risk pixels", f"{high_area:.1f}%", f"{int((class_slice == 2).sum
 
 view_context = build_context(
     site_name=site.name,
+    coordinates=format_coordinates(site.center[0], site.center[1]),
     slider_date=selected_time.strftime("%d %B %Y"),
     rain_month=rain_month,
     percent_normal=float(latest_rain.percent_normal),
@@ -523,14 +559,28 @@ if st.session_state.get("show_chat"):
 st.subheader("Study area & current risk surface")
 map_col, context_col = st.columns([1.7, 1])
 with map_col:
-    st.caption(f"Map classes follow the risk index. {RISK_LEGEND}.")
-    st_folium(
+    st.caption(
+        f"{format_coordinates(site.center[0], site.center[1])} · "
+        f"{site.center[0]:.4f}, {site.center[1]:.4f}. "
+        "Click the map to load a 5 km custom location. "
+        f"Map classes follow the risk index. {RISK_LEGEND}."
+    )
+    map_state = st_folium(
         site_map(site, risk_slice.values),
         height=475,
         use_container_width=True,
-        returned_objects=[],
+        returned_objects=["last_clicked"],
         key=f"map-{site_id}-{time_index}",
     )
+    clicked = (map_state or {}).get("last_clicked") or {}
+    if clicked.get("lat") is not None and clicked.get("lng") is not None:
+        click_token = f"{round(clicked['lat'], 2):.2f},{round(clicked['lng'], 2):.2f}"
+        if click_token != st.session_state.get("handled_click"):
+            st.session_state.handled_click = click_token
+            st.session_state.custom_site_id = register_custom_site(
+                clicked["lat"], clicked["lng"]
+            )
+            st.rerun()
 with context_col:
     st.markdown("#### Scene interpretation")
     st.markdown(

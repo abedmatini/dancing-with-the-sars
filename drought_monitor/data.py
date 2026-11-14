@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 import json
+import math
 
 import geopandas as gpd
 import numpy as np
@@ -39,10 +40,16 @@ class SiteData:
     metadata: dict[str, Any]
 
 
+GROUP_LOCAL = "Cape Town / Western Cape"
+GROUP_GLOBAL = "Global"
+CUSTOM_BOX_KM = 5.0
+
 SITE_CONFIGS: dict[str, dict[str, Any]] = {
     "table_mountain": {
         "name": "Table Mountain / Cape Peninsula",
         "short_name": "Table Mountain",
+        "group": GROUP_LOCAL,
+        "terrain": "steep fynbos mountain",
         "center": (-33.9628, 18.4098),
         "description": "Fire-prone, steep fynbos slopes above the City Bowl.",
         "extent": (18.382, -33.989, 18.438, -33.937),
@@ -55,6 +62,8 @@ SITE_CONFIGS: dict[str, dict[str, Any]] = {
     "cape_flats": {
         "name": "Cape Flats Aquifer",
         "short_name": "Cape Flats",
+        "group": GROUP_LOCAL,
+        "terrain": "low sandy aquifer",
         "center": (-34.0050, 18.5900),
         "description": "Low-gradient sandy aquifer with groundwater abstraction.",
         "extent": (18.548, -34.035, 18.632, -33.975),
@@ -67,6 +76,8 @@ SITE_CONFIGS: dict[str, dict[str, Any]] = {
     "silvermine": {
         "name": "Silvermine Fynbos Catchment",
         "short_name": "Silvermine",
+        "group": GROUP_LOCAL,
+        "terrain": "steep fynbos headwaters",
         "center": (-34.0850, 18.4230),
         "description": "Steep fynbos headwaters draining toward False Bay.",
         "extent": (18.390, -34.115, 18.456, -34.055),
@@ -76,7 +87,149 @@ SITE_CONFIGS: dict[str, dict[str, Any]] = {
         "burn_fraction": 0.34,
         "pumping_stress": False,
     },
+    "jonkershoek": {
+        "name": "Jonkershoek, Stellenbosch",
+        "short_name": "Jonkershoek",
+        "group": GROUP_LOCAL,
+        "terrain": "steep fynbos mountain catchment",
+        "center": (-33.9775, 18.9525),
+        "description": "Steep sandstone fynbos catchment in the Jonkershoek valley east of Stellenbosch.",
+        "extent": (18.920, -34.010, 18.985, -33.945),
+        "slope_range": (12.0, 40.0),
+        "soil_base": 0.210,
+        "rain_factor": 1.22,
+        "burn_fraction": 0.18,
+        "pumping_stress": False,
+    },
+    "theewaterskloof": {
+        "name": "Theewaterskloof Dam",
+        "short_name": "Theewaterskloof",
+        "group": GROUP_LOCAL,
+        "terrain": "reservoir and mountain foothills",
+        "center": (-34.0775, 19.2150),
+        "description": "Open water and the slopes around a large storage reservoir. Terrain: reservoir and foothills.",
+        "extent": (19.175, -34.105, 19.255, -34.050),
+        "slope_range": (1.0, 22.0),
+        "soil_base": 0.190,
+        "rain_factor": 1.05,
+        "burn_fraction": 0.10,
+        "pumping_stress": False,
+    },
+    "atlantis": {
+        "name": "Atlantis aquifer",
+        "short_name": "Atlantis",
+        "group": GROUP_LOCAL,
+        "terrain": "low sandy coastal plain",
+        "center": (-33.5700, 18.4850),
+        "description": "Sandy coastal plain used for groundwater supply. Terrain: low coastal aquifer.",
+        "extent": (18.440, -33.610, 18.530, -33.530),
+        "slope_range": (0.2, 4.0),
+        "soil_base": 0.140,
+        "rain_factor": 0.70,
+        "burn_fraction": 0.04,
+        "pumping_stress": True,
+    },
+    "hottentots_holland": {
+        "name": "Hottentots Holland / Grabouw",
+        "short_name": "Grabouw",
+        "group": GROUP_LOCAL,
+        "terrain": "mountain fynbos and farmed foothills",
+        "center": (-34.1400, 19.0250),
+        "description": "Mountain slopes and farmed foothills between Grabouw and the Hottentots Holland ridge.",
+        "extent": (18.980, -34.180, 19.070, -34.100),
+        "slope_range": (8.0, 36.0),
+        "soil_base": 0.200,
+        "rain_factor": 1.15,
+        "burn_fraction": 0.16,
+        "pumping_stress": False,
+    },
+    "cederberg": {
+        "name": "Cederberg",
+        "short_name": "Cederberg",
+        "group": GROUP_LOCAL,
+        "terrain": "rocky sandstone mountains",
+        "center": (-32.3650, 19.0650),
+        "description": "Rocky sandstone mountains and dry-summer fynbos in the central Cederberg.",
+        "extent": (19.020, -32.400, 19.110, -32.330),
+        "slope_range": (10.0, 42.0),
+        "soil_base": 0.160,
+        "rain_factor": 0.62,
+        "burn_fraction": 0.22,
+        "pumping_stress": False,
+    },
+    "palisades": {
+        "name": "Los Angeles / Palisades",
+        "short_name": "Palisades",
+        "group": GROUP_GLOBAL,
+        "terrain": "steep coastal hills",
+        "center": (34.0450, -118.5250),
+        "description": "Fire and drought hotspot on steep coastal hills. Post-fire rain can move sediment.",
+        "extent": (-118.560, 34.020, -118.490, 34.070),
+        "slope_range": (8.0, 35.0),
+        "soil_base": 0.120,
+        "rain_factor": 0.55,
+        "burn_fraction": 0.40,
+        "pumping_stress": False,
+    },
+    "attica": {
+        "name": "Attica, Greece",
+        "short_name": "Attica",
+        "group": GROUP_GLOBAL,
+        "terrain": "dry Mediterranean hills",
+        "center": (38.2220, 23.9200),
+        "description": "Fire and drought hotspot on dry Mediterranean hills. Summer fire is followed by flash runoff.",
+        "extent": (23.880, 38.190, 23.960, 38.255),
+        "slope_range": (6.0, 28.0),
+        "soil_base": 0.110,
+        "rain_factor": 0.48,
+        "burn_fraction": 0.30,
+        "pumping_stress": False,
+    },
+    "valparaiso": {
+        "name": "Valparaíso, Chile",
+        "short_name": "Valparaíso",
+        "group": GROUP_GLOBAL,
+        "terrain": "steep coastal hills",
+        "center": (-33.0500, -71.5800),
+        "description": "Fire and drought hotspot on steep coastal hills above a port city.",
+        "extent": (-71.620, -33.085, -71.540, -33.015),
+        "slope_range": (10.0, 34.0),
+        "soil_base": 0.130,
+        "rain_factor": 0.58,
+        "burn_fraction": 0.36,
+        "pumping_stress": False,
+    },
+    "blue_mountains": {
+        "name": "Blue Mountains, Australia",
+        "short_name": "Blue Mountains",
+        "group": GROUP_GLOBAL,
+        "terrain": "sandstone escarpment and forest",
+        "center": (-33.7200, 150.3100),
+        "description": "Fire and drought hotspot on a forested sandstone escarpment.",
+        "extent": (150.270, -33.750, 150.350, -33.690),
+        "slope_range": (8.0, 38.0),
+        "soil_base": 0.150,
+        "rain_factor": 0.90,
+        "burn_fraction": 0.28,
+        "pumping_stress": False,
+    },
+    "central_valley": {
+        "name": "Central Valley, California",
+        "short_name": "Central Valley",
+        "group": GROUP_GLOBAL,
+        "terrain": "flat irrigated valley floor",
+        "center": (36.6000, -120.2000),
+        "description": "Groundwater hotspot on a flat irrigated valley floor. Pumping can lower the land surface.",
+        "extent": (-120.245, 36.570, -120.155, 36.630),
+        "slope_range": (0.1, 2.0),
+        "soil_base": 0.170,
+        "rain_factor": 0.28,
+        "burn_fraction": 0.01,
+        "pumping_stress": True,
+    },
 }
+
+CUSTOM_SITES: dict[str, dict[str, Any]] = {}
 
 SEEDS = {"table_mountain": 2601, "cape_flats": 2602, "silvermine": 2603}
 RAINFALL_MONTHS = pd.date_range("2026-01-01", "2026-11-01", freq="MS")
@@ -86,9 +239,100 @@ GRID_SHAPE = (36, 42)
 
 
 def list_sites() -> dict[str, str]:
-    """Return site IDs and display names without exposing loader internals."""
+    """Return preset site IDs and display names."""
 
     return {site_id: config["name"] for site_id, config in SITE_CONFIGS.items()}
+
+
+def sites_by_group() -> dict[str, dict[str, str]]:
+    """Preset sites grouped for the region dropdown."""
+
+    grouped = {GROUP_LOCAL: {}, GROUP_GLOBAL: {}}
+    for site_id, config in SITE_CONFIGS.items():
+        grouped[config["group"]][site_id] = config["name"]
+    return grouped
+
+
+def resolve_site(site_id: str) -> dict[str, Any]:
+    """Return a preset or a registered custom site."""
+
+    if site_id in SITE_CONFIGS:
+        return SITE_CONFIGS[site_id]
+    if site_id in CUSTOM_SITES:
+        return CUSTOM_SITES[site_id]
+    raise ValueError(f"Unknown site_id {site_id!r}. Choose from {list(SITE_CONFIGS)}")
+
+
+def seed_for(site_id: str, center: tuple[float, float]) -> int:
+    """Stable mock seed. Named presets keep their original seeds."""
+
+    if site_id in SEEDS:
+        return SEEDS[site_id]
+    lat, lon = center
+    mixed = int(round(lat * 100)) * 100_003 + int(round(lon * 100)) * 100_019
+    return abs(mixed) % 2_000_000_000
+
+
+def extent_size_km(extent: tuple[float, float, float, float]) -> tuple[float, float]:
+    """Return width and height of a lon/lat box in kilometres."""
+
+    west, south, east, north = extent
+    mid_lat = (south + north) / 2
+    height = (north - south) * 111.0
+    width = (east - west) * 111.0 * math.cos(math.radians(mid_lat))
+    return abs(width), abs(height)
+
+
+def custom_extent(lat: float, lon: float, km: float = CUSTOM_BOX_KM) -> tuple[float, float, float, float]:
+    """A box of about ``km`` on a side, never larger than that on the ground."""
+
+    half = km / 2
+    dlat = half / 111.0
+    cosine = math.cos(math.radians(lat))
+    if abs(cosine) < 0.2:
+        dlon = half / (111.0 * 0.2)
+    else:
+        dlon = half / (111.0 * abs(cosine))
+    # Cap the degree span so a polar click cannot request a huge longitude range.
+    dlat = min(dlat, 2.5 / 111.0)
+    dlon = min(dlon, 2.5 / (111.0 * 0.2))
+    return (lon - dlon, lat - dlat, lon + dlon, lat + dlat)
+
+
+def format_coordinates(lat: float, lon: float) -> str:
+    north_south = "S" if lat < 0 else "N"
+    east_west = "W" if lon < 0 else "E"
+    return f"{abs(lat):.2f}°{north_south}, {abs(lon):.2f}°{east_west}"
+
+
+def register_custom_site(lat: float, lon: float) -> str:
+    """Create or reuse a 5 km site centred on rounded coordinates."""
+
+    lat_r = round(float(lat), 2)
+    lon_r = round(float(lon), 2)
+    site_id = f"custom_{lat_r:+.2f}_{lon_r:+.2f}".replace("+", "p").replace("-", "m").replace(".", "d")
+    if site_id not in CUSTOM_SITES:
+        extent = custom_extent(lat_r, lon_r)
+        CUSTOM_SITES[site_id] = {
+            "name": "Custom location",
+            "short_name": "Custom",
+            "group": "Custom",
+            "terrain": "map click",
+            "center": (lat_r, lon_r),
+            "description": (
+                f"Custom location at {format_coordinates(lat_r, lon_r)}. "
+                "The box is about 5 km on a side. "
+                "The burn mask is a labeled mock layer."
+            ),
+            "extent": extent,
+            "slope_range": (2.0, 25.0),
+            "soil_base": 0.180,
+            "rain_factor": 1.0,
+            "burn_fraction": 0.08,
+            "pumping_stress": False,
+            "custom": True,
+        }
+    return site_id
 
 
 def load_site_data(
@@ -101,8 +345,7 @@ def load_site_data(
     variables, units, CRS metadata, and table columns.
     """
 
-    if site_id not in SITE_CONFIGS:
-        raise ValueError(f"Unknown site_id {site_id!r}. Choose from {list(SITE_CONFIGS)}")
+    resolve_site(site_id)
     if source == "mock":
         return _load_mock(site_id)
     if source == "earthdata":
@@ -121,8 +364,8 @@ def load_site_data(
 
 
 def _load_mock(site_id: str) -> SiteData:
-    config = SITE_CONFIGS[site_id]
-    rng = np.random.default_rng(SEEDS[site_id])
+    config = resolve_site(site_id)
+    rng = np.random.default_rng(seed_for(site_id, config["center"]))
     x, y, transform = _grid_coordinates(config["extent"])
 
     boundary = gpd.GeoDataFrame(
@@ -154,6 +397,15 @@ def _load_mock(site_id: str) -> SiteData:
             "soil_product": "NISAR L3 SME2-like surface soil moisture",
             "crs": "EPSG:4326",
             "pumping_stress": config["pumping_stress"],
+            "terrain": config.get("terrain", ""),
+            "latitude": config["center"][0],
+            "longitude": config["center"][1],
+            "layers": {
+                "rainfall": "MOCK · seeded monthly rainfall",
+                "soil_moisture": "MOCK · seeded soil moisture",
+                "slope": "MOCK · seeded slope",
+                "burn_mask": "MOCK · seeded burn mask",
+            },
         },
     )
 

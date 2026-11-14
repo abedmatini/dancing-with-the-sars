@@ -11,6 +11,7 @@ import calendar
 import json
 import os
 from pathlib import Path
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -26,8 +27,8 @@ from shapely.geometry import box
 from drought_monitor.env import load_local_env
 from drought_monitor.data import (
     GRID_SHAPE,
-    SEEDS,
-    SITE_CONFIGS,
+    resolve_site,
+    seed_for,
     SiteData,
     _calculate_runoff_risk,
     _grid_coordinates,
@@ -68,7 +69,7 @@ def earthdata_token() -> str | None:
 def load_earthdata_site(site_id: str) -> SiteData:
     """Build one site from public NASA data, with NISAR used when authorized."""
 
-    config = SITE_CONFIGS[site_id]
+    config = resolve_site(site_id)
     extent = config["extent"]
     x, y, transform = _grid_coordinates(extent)
     token = earthdata_token()
@@ -77,7 +78,7 @@ def load_earthdata_site(site_id: str) -> SiteData:
 
     rainfall = _power_rainfall(config["center"])
     layers["rainfall"] = (
-        "NASA POWER PRECTOTCORR monthly total, versus POWER climatology"
+        "LIVE · NASA POWER PRECTOTCORR monthly total, versus POWER climatology"
     )
 
     try:
@@ -94,17 +95,17 @@ def load_earthdata_site(site_id: str) -> SiteData:
 
     try:
         slope = _copernicus_slope(config["center"], extent, x, y, transform)
-        layers["slope"] = "Copernicus DEM GLO-30 public COG, slope in degrees"
+        layers["slope"] = "LIVE · Copernicus DEM GLO-30 public COG, slope in degrees"
     except Exception as exc:
-        rng = np.random.default_rng(SEEDS[site_id])
+        rng = np.random.default_rng(seed_for(site_id, config["center"]))
         slope = _mock_slope(config, x, y, transform, rng)
-        layers["slope"] = "MOCK Copernicus-like slope; public DEM read failed"
+        layers["slope"] = "MOCK · seeded slope because the public DEM read failed"
         notices.append(f"Copernicus DEM could not be read ({exc}). Slope is synthetic.")
 
-    rng = np.random.default_rng(SEEDS[site_id] + 17)
+    rng = np.random.default_rng(seed_for(site_id, config["center"]) + 17)
     burn_mask = _mock_burn_mask(config, x, y, transform, rng)
     burn_mask.attrs["source"] = (
-        "MOCK burn mask. MODIS MCD64A1 was not read because it requires an Earthdata token."
+        "MOCK · seeded burn mask. MODIS MCD64A1 was not read."
     )
     layers["burn_mask"] = burn_mask.attrs["source"]
     notices.append(
@@ -142,6 +143,9 @@ def load_earthdata_site(site_id: str) -> SiteData:
             "orbit_repeat_days": 12,
             "crs": "EPSG:4326",
             "pumping_stress": config["pumping_stress"],
+            "terrain": config.get("terrain", ""),
+            "latitude": config["center"][0],
+            "longitude": config["center"][1],
             "rainfall_product": layers["rainfall"],
             "soil_product": layers["soil_moisture"],
         },
@@ -196,7 +200,7 @@ def _soil_moisture(config, x, y, transform, token, nisar, sampled):
             dataset = _nisar_soil_dataset(sampled, config["extent"], x, y, transform, token)
             return (
                 dataset,
-                f"{NISAR_SHORT_NAME} HDF5 via ASF, bearer token, up to 6 scenes",
+                f"LIVE · {NISAR_SHORT_NAME} HDF5 via ASF, bearer token, up to 6 scenes",
                 f"Read {dataset.sizes['time']} NISAR SME2 scenes with the Earthdata token.",
             )
         except Exception as exc:
@@ -217,7 +221,7 @@ def _soil_moisture(config, x, y, transform, token, nisar, sampled):
     dataset = _power_soil_dataset(config["center"], x, y, transform)
     return (
         dataset,
-        "NASA POWER MERRA-2 GWETTOP surface soil wetness, 12-day sample, site value repeated on the grid",
+        "LIVE · NASA POWER MERRA-2 GWETTOP surface soil wetness, 12-day sample, site value repeated on the grid",
         notice
         + "Soil moisture is NASA POWER MERRA-2 surface wetness (dimensionless), "
         "not NISAR volumetric water content.",
@@ -483,9 +487,25 @@ def _power_params(parameter: str, lat: float, lon: float, **extra) -> dict[str, 
     return params
 
 
+_LAST_POWER_CALL = 0.0
+
+
+def _pause_for_power(url: str) -> None:
+    """Keep NASA POWER calls at least half a second apart."""
+
+    global _LAST_POWER_CALL
+    if "power.larc.nasa.gov" not in url:
+        return
+    gap = 0.5 - (time.monotonic() - _LAST_POWER_CALL)
+    if gap > 0:
+        time.sleep(gap)
+    _LAST_POWER_CALL = time.monotonic()
+
+
 def _get_json(url: str, params: dict | None = None) -> dict:
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
+    _pause_for_power(url)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:

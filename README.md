@@ -10,7 +10,8 @@ terrain and recent fire information.
 
 ## What is included
 
-- Table Mountain / Cape Peninsula, Cape Flats Aquifer and Silvermine study sites
+- Cape Town and Western Cape sites, plus global fire, drought and subsidence sites
+- Click the map to load a 5 km custom location from mock data or NASA POWER
 - Cape winter-rainfall seasonality, anomalies and percentage of normal
 - NISAR L3 SME2-like `xarray.Dataset` (`time, y, x`) on a 12-day repeat
 - Raster-compatible slope and fire layers with CRS and affine transform metadata
