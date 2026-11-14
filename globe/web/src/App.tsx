@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchCatalog, fetchFlow, fetchGrid, fetchScene } from "./api";
+import { DataNote } from "./DataNote";
 import { Earth } from "./Earth";
 import { Panel } from "./Panel";
 import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
 import { fetchWind, type WindField } from "./wind";
+
+const DATA_NOTE_KEY = "sars-globe-nasa-note";
 
 const TOUR = [
   { name: "Cape Town", lat: -33.9628, lon: 18.4098 },
@@ -46,10 +49,37 @@ export default function App() {
   const [zoomStep, setZoomStep] = useState(0);
   const [focus, setFocus] = useState<{ lat: number; lon: number } | null>(null);
   const [tourLabel, setTourLabel] = useState("");
+  const [dataNote, setDataNote] = useState(false);
   const request = useRef(0);
   const tourToken = useRef(0);
 
   const pins = useMemo(() => catalog?.groups.flatMap((group) => group.sites) ?? [], [catalog]);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(DATA_NOTE_KEY) !== "seen") setDataNote(true);
+    } catch {
+      setDataNote(true);
+    }
+  }, []);
+
+  function dismissDataNote() {
+    setDataNote(false);
+    try {
+      localStorage.setItem(DATA_NOTE_KEY, "seen");
+    } catch {
+      /* The note can still be opened from the header. */
+    }
+  }
+
+  useEffect(() => {
+    if (!dataNote) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissDataNote();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dataNote]);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,6 +246,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            onClick={() => setDataNote(true)}
+            className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
+          >
+            NASA data
+          </button>
+          <button
+            type="button"
             onClick={() => setSpinning((value) => !value)}
             className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
           >
@@ -307,7 +344,8 @@ export default function App() {
           <p className="pointer-events-auto max-w-xl rounded-xl bg-rose-400/15 px-3 py-2 text-sm">{bootError}</p>
         ) : null}
       </header>
-      {!panelOpen ? (
+      {dataNote ? <DataNote onClose={dismissDataNote} /> : null}
+      {!panelOpen && !dataNote ? (
         <p className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs text-sm text-slate-300">
           Click a glowing pin, or anywhere on the Earth, to open a 5 km study box.
         </p>
