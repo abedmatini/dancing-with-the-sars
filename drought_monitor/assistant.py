@@ -1,6 +1,6 @@
-"""Plain-language answers for the dashboard, with an optional free-tier LLM.
+"""Plain-language answers for the dashboard, with optional Claude.
 
-The page always has a local answer. A key is used only when one is configured.
+The page always has a local answer. Claude is used only when a key is set.
 """
 
 from __future__ import annotations
@@ -20,10 +20,12 @@ SYSTEM_PROMPT = (
     "non-expert. Do not invent measurements, dates, or causes. If the data does "
     "not contain the answer, say that it is not known from this page."
 )
+DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5"
 NO_KEY_NOTICE = (
-    "No language-model key is set. Add GEMINI_API_KEY, or LLM_API_KEY together "
-    "with LLM_BASE_URL and LLM_MODEL, in Streamlit Cloud > App settings > Secrets. "
-    "Until then, answers come only from the numbers on this page."
+    "No language-model key is set. Add ANTHROPIC_API_KEY in Streamlit Cloud > "
+    "App settings > Secrets. Optional ANTHROPIC_MODEL defaults to "
+    f"{DEFAULT_ANTHROPIC_MODEL}. Until then, answers come only from the numbers "
+    "on this page."
 )
 EARTHDATA_SIGNUP = "https://urs.earthdata.nasa.gov"
 
@@ -70,12 +72,10 @@ def earthdata_token_notice(using_mock: bool) -> str:
 
 
 def llm_provider() -> str | None:
-    """Prefer an explicit OpenAI-compatible endpoint, otherwise Gemini."""
+    """Claude when ANTHROPIC_API_KEY is set, otherwise the on-page answer."""
 
-    if _setting("LLM_API_KEY"):
-        return "openai-compatible"
-    if _setting("GEMINI_API_KEY"):
-        return "gemini"
+    if _setting("ANTHROPIC_API_KEY"):
+        return "claude"
     return None
 
 
@@ -264,30 +264,25 @@ def fallback_answer(question: str, context: dict) -> str:
     )
 
 
-def answer_question(question: str, context: dict) -> tuple[str, str]:
-    """Return an answer and the provider name. Never raises."""
+def answer_question(question: str, context: dict) -> tuple[str, str, str | None]:
+    """Return answer text, provider, and a plain-language error. Never raises."""
 
     provider = llm_provider()
     if provider is None:
-        return fallback_answer(question, context), "page"
+        return fallback_answer(question, context), "page", None
     prompt = f"{context_block(context)}\n\nQuestion: {question}"
     try:
-        if provider == "gemini":
-            return _gemini(prompt), "gemini"
-        return _openai_compatible(prompt), "openai-compatible"
-    except Exception:
-        return (
-            "The language model could not be reached, so this answer uses only the page. "
-            + fallback_answer(question, context)
-        ), "page"
+        return _claude(prompt), "claude", None
+    except Exception as exc:
+        return fallback_answer(question, context), "page", _plain_model_error(exc)
 
 
-def summarize_view(context: dict) -> tuple[str, str]:
-    """Return a 4–6 sentence summary and the provider name. Never raises."""
+def summarize_view(context: dict) -> tuple[str, str, str | None]:
+    """Return a 4–6 sentence summary, provider, and error. Never raises."""
 
     provider = llm_provider()
     if provider is None:
-        return template_summary(context), "page"
+        return template_summary(context), "page", None
     prompt = (
         "Write 4 to 6 short sentences for a non-expert. Cover the slider date, "
         "rainfall versus normal, the soil-moisture trend, the runoff-risk class, "
@@ -295,46 +290,42 @@ def summarize_view(context: dict) -> tuple[str, str]:
         + context_block(context)
     )
     try:
-        if provider == "gemini":
-            return _gemini(prompt), "gemini"
-        return _openai_compatible(prompt), "openai-compatible"
-    except Exception:
-        return template_summary(context), "page"
+        return _claude(prompt), "claude", None
+    except Exception as exc:
+        return template_summary(context), "page", _plain_model_error(exc)
 
 
-def _gemini(prompt: str) -> str:
-    model = _setting("GEMINI_MODEL") or "gemini-2.5-flash"
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model}:generateContent?key={_setting('GEMINI_API_KEY')}"
-    )
-    body = {
-        "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-    }
-    payload = _post_json(url, body, headers={"Content-Type": "application/json"})
-    return payload["candidates"][0]["content"]["parts"][0]["text"].strip()
+def _plain_model_error(exc: Exception) -> str:
+    detail = " ".join(str(exc).split()) or "Claude could not be reached."
+    return f"{detail} The answer below uses only the numbers on this page."
 
 
-def _openai_compatible(prompt: str) -> str:
-    base = (_setting("LLM_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
-    model = _setting("LLM_MODEL") or "gpt-4o-mini"
+def _claude(prompt: str) -> str:
+    model = _setting("ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
     body = {
         "model": model,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
+        "max_tokens": 800,
+        "system": SYSTEM_PROMPT,
+        "messages": [{"role": "user", "content": prompt}],
     }
     payload = _post_json(
-        f"{base}/chat/completions",
+        "https://api.anthropic.com/v1/messages",
         body,
         headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {_setting('LLM_API_KEY')}",
+            "content-type": "application/json",
+            "x-api-key": _setting("ANTHROPIC_API_KEY") or "",
+            "anthropic-version": "2023-06-01",
         },
     )
-    return payload["choices"][0]["message"]["content"].strip()
+    parts = [
+        block.get("text", "")
+        for block in payload.get("content", [])
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    text = "\n".join(part.strip() for part in parts if part.strip()).strip()
+    if not text:
+        raise RuntimeError("Claude returned an empty answer.")
+    return text
 
 
 def _post_json(url: str, body: dict, headers: dict) -> dict:
@@ -348,4 +339,22 @@ def _post_json(url: str, body: dict, headers: dict) -> dict:
         with urllib.request.urlopen(request, timeout=25) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"HTTP {exc.code}") from exc
+        raw = exc.read().decode(errors="replace")
+        message = _anthropic_error_message(raw) or f"Claude returned HTTP {exc.code}."
+        raise RuntimeError(message) from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError("Claude could not be reached.") from exc
+
+
+def _anthropic_error_message(raw: str) -> str:
+    try:
+        payload = json.loads(raw)
+        error = payload.get("error", {})
+        if isinstance(error, dict) and error.get("message"):
+            return f"Claude said: {error['message']}"
+    except json.JSONDecodeError:
+        pass
+    cleaned = " ".join(raw.split())
+    if not cleaned:
+        return ""
+    return f"Claude returned an error: {cleaned[:180]}"

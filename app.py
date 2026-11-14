@@ -470,45 +470,55 @@ view_context = build_context(
     using_mock=using_mock,
 )
 st.session_state["view_context"] = view_context
+view_key = f"{site_id}|{selected_time.strftime('%Y-%m-%d')}|{source}"
+if st.session_state.get("summary_view_key") not in (None, view_key):
+    for stale_key in ("view_summary", "summary_provider", "summary_error", "summary_view_key"):
+        st.session_state.pop(stale_key, None)
 
+ask_col, summary_col = st.columns(2)
+if ask_col.button("Ask about this data", key="ask_about_data", width="stretch"):
+    st.session_state.show_chat = True
+if summary_col.button("Summarize this view", key="summarize_view", width="stretch"):
+    summary_text, summary_provider, summary_error = summarize_view(view_context)
+    st.session_state["view_summary"] = summary_text
+    st.session_state["summary_provider"] = summary_provider
+    st.session_state["summary_error"] = summary_error
+    st.session_state["summary_view_key"] = view_key
+if st.session_state.get("summary_view_key") == view_key and st.session_state.get("view_summary"):
+    if st.session_state.get("summary_error"):
+        st.warning(st.session_state["summary_error"])
+    st.markdown(st.session_state["view_summary"])
+    if st.session_state.get("summary_provider") == "page" and not st.session_state.get("summary_error"):
+        st.caption(
+            "On-page summary. Add ANTHROPIC_API_KEY in Streamlit Cloud > "
+            "App settings > Secrets to use Claude."
+        )
+    elif st.session_state.get("summary_provider") == "claude":
+        st.caption("Summary from Claude.")
+    else:
+        st.caption("On-page summary, because Claude could not answer.")
 
-def _close_chat() -> None:
-    st.session_state.open_chat = False
-
-
-@st.dialog("Ask about this data", width="large", on_dismiss=_close_chat)
-def ask_about_data() -> None:
-    context = st.session_state["view_context"]
+if st.session_state.get("show_chat"):
+    st.markdown("#### Ask about this data")
     if llm_provider() is None:
         st.info(NO_KEY_NOTICE)
     messages = st.session_state.setdefault("qa_messages", [])
     for message in messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
-    question = st.chat_input("Ask about the numbers on this page")
+    if st.button("Close chat", key="close_chat"):
+        st.session_state.show_chat = False
+        st.rerun()
+    question = st.chat_input("Ask about the numbers on this page", key="data_question")
     if question:
-        reply, provider = answer_question(question, context)
+        reply, provider, error = answer_question(question, st.session_state["view_context"])
         messages.append({"role": "user", "content": question})
-        messages.append({"role": "assistant", "content": reply})
+        if error:
+            messages.append({"role": "assistant", "content": f"{error}\n\n{reply}"})
+        else:
+            messages.append({"role": "assistant", "content": reply})
         st.session_state["qa_provider"] = provider
         st.rerun()
-
-
-ask_col, summary_col = st.columns(2)
-if ask_col.button("Ask about this data", width="stretch"):
-    st.session_state.open_chat = True
-if st.session_state.get("open_chat"):
-    ask_about_data()
-if summary_col.button("Summarize this view", width="stretch"):
-    summary_text, summary_provider = summarize_view(view_context)
-    st.session_state["view_summary"] = summary_text
-    st.session_state["summary_provider"] = summary_provider
-if st.session_state.get("view_summary"):
-    st.markdown(st.session_state["view_summary"])
-    if st.session_state.get("summary_provider") == "page":
-        st.caption("On-page summary. Add GEMINI_API_KEY or LLM_API_KEY to use a language model.")
-    else:
-        st.caption(f"Summary from {st.session_state['summary_provider']}.")
 
 st.subheader("Study area & current risk surface")
 map_col, context_col = st.columns([1.7, 1])

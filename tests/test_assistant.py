@@ -58,24 +58,24 @@ def test_template_summary_covers_the_view():
 
 
 def test_summary_without_a_key_uses_the_template(monkeypatch):
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     context = _context()
-    text, provider = summarize_view(context)
+    text, provider, error = summarize_view(context)
     assert provider == "page"
+    assert error is None
     assert text == template_summary(context)
     assert llm_provider() is None
 
 
 def test_chat_without_a_key_answers_from_the_page(monkeypatch):
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     context = _context()
-    rain, provider = answer_question("How does rainfall compare with normal?", context)
+    rain, provider, error = answer_question("How does rainfall compare with normal?", context)
     assert provider == "page"
+    assert error is None
     assert "72%" in rain
     assert "-18 mm" in rain
-    assert "GEMINI_API_KEY" in NO_KEY_NOTICE
+    assert "ANTHROPIC_API_KEY" in NO_KEY_NOTICE
     assert "Streamlit Cloud > App settings > Secrets" in NO_KEY_NOTICE
 
 
@@ -85,17 +85,21 @@ def test_unknown_question_says_it_is_not_on_the_page():
 
 
 def test_failed_model_call_falls_back(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
     def explode(*args, **kwargs):
-        raise RuntimeError("offline")
+        raise RuntimeError("Claude returned HTTP 401.")
 
-    monkeypatch.setattr("drought_monitor.assistant._gemini", explode)
-    text, provider = answer_question("What is the runoff risk?", _context())
+    monkeypatch.setattr("drought_monitor.assistant._claude", explode)
+    text, provider, error = answer_question("What is the runoff risk?", _context())
     assert provider == "page"
+    assert error is not None
+    assert "HTTP 401" in error
+    assert "numbers on this page" in error
     assert "Medium" in text
-    summary, summary_provider = summarize_view(_context())
+    summary, summary_provider, summary_error = summarize_view(_context())
     assert summary_provider == "page"
+    assert summary_error is not None
     assert summary == template_summary(_context())
 
 

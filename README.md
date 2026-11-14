@@ -32,8 +32,10 @@ streamlit run app.py
 Streamlit prints the local URL, normally `http://localhost:8501`.
 
 **Ask about this data** opens a chat about the current site, slider date, and
-metrics. **Summarize this view** writes four to six sentences. Both work with
-no API key. A key is optional; see the secrets table below.
+metrics. The conversation stays on the page until you close it. **Summarize
+this view** writes four to six sentences and keeps them until you change the
+site, date, or data source. Both work with no API key. Set `ANTHROPIC_API_KEY`
+to use Claude.
 
 The deployment-ready static edition uses the same generated mock data and needs
 only Python's standard library to serve:
@@ -107,10 +109,8 @@ Reboot the app after saving the secret. Do not commit the token.
 | --- | --- |
 | `EARTHDATA_TOKEN` | NISAR HDF5 downloads. Without it, Earthdata mode keeps public POWER and Copernicus layers and a mock burn mask. |
 | `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` | Optional pair. If both are set, the missing-token banner stays hidden. Downloads in this app still use `EARTHDATA_TOKEN`. |
-| `GEMINI_API_KEY` | Google Gemini answers for **Ask about this data** and **Summarize this view**. Optional `GEMINI_MODEL` (default `gemini-2.5-flash`). |
-| `LLM_API_KEY` | OpenAI-compatible chat. Used instead of Gemini when set. |
-| `LLM_BASE_URL` | Optional. Defaults to `https://api.openai.com/v1`. |
-| `LLM_MODEL` | Optional. Defaults to `gpt-4o-mini`. |
+| `ANTHROPIC_API_KEY` | Claude answers for **Ask about this data** and **Summarize this view**. |
+| `ANTHROPIC_MODEL` | Optional. Defaults to `claude-haiku-4-5`. |
 
 The same names are listed empty in `.env.example`. Put values in a gitignored `.env` or `.streamlit/secrets.toml` locally, or in Streamlit Cloud under **App settings > Secrets**. With no language-model key, both buttons still answer from the numbers on the page.
 

@@ -13,11 +13,8 @@ def test_env_example_lists_empty_names():
         "EARTHDATA_TOKEN=\n"
         "EARTHDATA_USERNAME=\n"
         "EARTHDATA_PASSWORD=\n"
-        "GEMINI_API_KEY=\n"
-        "LLM_API_KEY=\n"
-        "LLM_BASE_URL=\n"
-        "LLM_MODEL=\n"
-        "GEMINI_MODEL=\n"
+        "ANTHROPIC_API_KEY=\n"
+        "ANTHROPIC_MODEL=\n"
     )
 
 
