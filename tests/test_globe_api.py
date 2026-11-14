@@ -86,3 +86,22 @@ def test_risk_grid_summary_and_chat_without_a_key(monkeypatch):
         json={"lat": 1.0, "lon": 36.0, "source": "mock", "question": "Who won the 2010 World Cup?"},
     ).json()
     assert "not known" in unknown["answer"]
+
+
+def test_site_cache_keeps_one_bundle(monkeypatch):
+    from globe.api import serialize
+
+    serialize._CACHE.clear()
+    loaded: list[str] = []
+
+    def fake(site_id, source="mock"):
+        loaded.append(site_id)
+        return site_id
+
+    monkeypatch.setattr("drought_monitor.data.load_site_data", fake)
+    assert serialize._cached_load("alpha", "mock") == "alpha"
+    assert serialize._cached_load("beta", "earthdata") == "beta"
+    assert list(serialize._CACHE) == [("beta", "earthdata")]
+    assert serialize._cached_load("beta", "earthdata") == "beta"
+    assert loaded == ["alpha", "beta"]
+    serialize._CACHE.clear()

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
+import gc
+import threading
+
 import numpy as np
 import pandas as pd
 
@@ -210,13 +214,26 @@ def _preset_at(lat: float, lon: float) -> str | None:
     return None
 
 
-_CACHE: dict[tuple[str, str], SiteData] = {}
+# The free Render instance has 512 MB. One loaded site is enough to answer
+# the panel; keeping several Earthdata bundles, or building two at once,
+# is what crosses that limit.
+_CACHE: OrderedDict[tuple[str, str], SiteData] = OrderedDict()
+_CACHE_LIMIT = 1
+_LOAD_LOCK = threading.Lock()
 
 
 def _cached_load(site_id: str, source: str) -> SiteData:
     from drought_monitor.data import load_site_data
 
     key = (site_id, source)
-    if key not in _CACHE:
-        _CACHE[key] = load_site_data(site_id, source=source)  # type: ignore[arg-type]
-    return _CACHE[key]
+    with _LOAD_LOCK:
+        cached = _CACHE.get(key)
+        if cached is not None:
+            _CACHE.move_to_end(key)
+            return cached
+        while len(_CACHE) >= _CACHE_LIMIT:
+            _CACHE.popitem(last=False)
+            gc.collect()
+        site = load_site_data(site_id, source=source)  # type: ignore[arg-type]
+        _CACHE[key] = site
+        return site
