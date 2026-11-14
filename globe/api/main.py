@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from drought_monitor.assistant import answer_question, summarize_view
+from drought_monitor.assistant import answer_question, podcast_script, summarize_view
 from globe.api.serialize import context_for, locate, preset_catalog, risk_grid, scene_payload
 
 app = FastAPI(title="Dancing with the SARs globe", version="1.0.0")
@@ -87,6 +87,18 @@ def summary(
 ) -> dict:
     payload = _view(lat, lon, source, date)
     text, provider, error = summarize_view(context_for(payload))
+    return {"text": text, "provider": provider, "error": error}
+
+
+@app.get("/podcast")
+def podcast(
+    lat: float = Query(...),
+    lon: float = Query(...),
+    source: Literal["mock", "earthdata"] = "mock",
+    date: str | None = None,
+) -> dict:
+    payload = _view(lat, lon, source, date)
+    text, provider, error = podcast_script(context_for(payload))
     return {"text": text, "provider": provider, "error": error}
 
 

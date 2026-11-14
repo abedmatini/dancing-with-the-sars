@@ -221,7 +221,7 @@ def _soil_moisture(config, x, y, transform, token, nisar, sampled):
     dataset = _power_soil_dataset(config["center"], x, y, transform)
     return (
         dataset,
-        "LIVE · NASA POWER MERRA-2 GWETTOP surface soil wetness, 12-day sample, site value repeated on the grid",
+        "LIVE · NASA POWER MERRA-2 GWETTOP surface soil wetness, daily sample, site value repeated on the grid",
         notice
         + "Soil moisture is NASA POWER MERRA-2 surface wetness (dimensionless), "
         "not NISAR volumetric water content.",
@@ -278,10 +278,8 @@ def _power_soil_dataset(center, x, y, transform) -> xr.Dataset:
     ]
     if len(valid) < 2:
         raise RuntimeError("NASA POWER returned no surface-wetness days")
-    start = valid[0][0]
-    sampled = [item for item in valid if (item[0] - start).days % 12 == 0]
-    times = [item[0] for item in sampled]
-    values = np.array([item[1] for item in sampled], dtype="float32")
+    times = [item[0] for item in valid]
+    values = np.array([item[1] for item in valid], dtype="float32")
     grid = np.broadcast_to(values[:, None, None], (len(times), *GRID_SHAPE)).copy()
     quality = np.zeros(grid.shape, dtype="uint8")
     return xr.Dataset(

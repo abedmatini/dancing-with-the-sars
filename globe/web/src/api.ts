@@ -144,6 +144,19 @@ export async function fetchSummary(
   };
 }
 
+export async function fetchPodcast(
+  lat: number,
+  lon: number,
+  source: SourceMode,
+  date: string,
+): Promise<{ text: string; error: string | null } | null> {
+  if (!(await apiReachable())) return null;
+  const params = new URLSearchParams({ lat: String(lat), lon: String(lon), source, date });
+  const response = await fetchOk(`${API_BASE}/podcast?${params}`);
+  if (!response) return null;
+  return (await response.json()) as { text: string; error: string | null };
+}
+
 export async function fetchChat(
   lat: number,
   lon: number,

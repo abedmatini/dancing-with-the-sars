@@ -11,8 +11,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { fetchChat, fetchSummary } from "./api";
+import { fetchChat, fetchPodcast, fetchSummary } from "./api";
 import { drynessOutlook } from "./outlook";
+import { briefingScript, sceneCadence, speakBriefing, stopBriefing } from "./podcast";
 import type { ChatTurn, Scene, SourceMode } from "./types";
 
 const chartTip = {
@@ -61,6 +62,8 @@ export function Panel({
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [asking, setAsking] = useState(false);
+  const [briefing, setBriefing] = useState("");
+  const [speaking, setSpeaking] = useState(false);
   const index = Math.max(0, scene.dates.indexOf(date));
   const risk = scene.risk_series.find((row) => row.date === date) ?? scene.risk;
   const soil = scene.soil_moisture.find((row) => row.date === date);
@@ -69,7 +72,28 @@ export function Panel({
     setSummary("");
     setSummaryError(null);
     setTurns([]);
+    setBriefing("");
+    setSpeaking(false);
+    stopBriefing();
   }, [scene.id, scene.source]);
+
+  useEffect(() => () => stopBriefing(), []);
+
+  async function playBriefing() {
+    if (speaking) {
+      stopBriefing();
+      setSpeaking(false);
+      return;
+    }
+    const local = briefingScript(scene, date);
+    setBriefing(local);
+    setSpeaking(true);
+    const live = await fetchPodcast(scene.lat, scene.lon, scene.source, date);
+    const script = live?.text?.trim() ? live.text.trim() : local;
+    setBriefing(script);
+    speakBriefing(script);
+    window.setTimeout(() => setSpeaking(false), 32_000);
+  }
 
   async function summarize() {
     setSummarizing(true);
@@ -169,7 +193,7 @@ export function Panel({
         </section>
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">12-day scenes</p>
+            <p className="text-sm font-medium">{sceneCadence(scene.dates)}</p>
             <button
               type="button"
               className="rounded-full bg-white/10 px-3 py-1 text-xs"
@@ -215,6 +239,14 @@ export function Panel({
           </ResponsiveContainer>
         </div>
         <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => void playBriefing()}
+            className="rounded-lg bg-white/10 px-3 py-2 text-sm"
+          >
+            {speaking ? "Stop briefing" : "Play 30-second briefing"}
+          </button>
+          {briefing ? <p className="text-sm leading-relaxed text-slate-200">{briefing}</p> : null}
           <button
             type="button"
             onClick={() => void summarize()}

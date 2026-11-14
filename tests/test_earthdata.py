@@ -78,6 +78,7 @@ def test_earthdata_without_token_uses_power_and_explains_nisar(monkeypatch):
     assert site.soil_moisture["soil_moisture"].attrs["units"] == "1"
     assert "POWER" in site.metadata["layers"]["rainfall"]
     assert site.rainfall.iloc[0].observed_mm == 60.0
+    assert site.soil_moisture.sizes["time"] == 3
 
 
 def test_earthdata_failure_falls_back_to_labeled_mock(monkeypatch):
