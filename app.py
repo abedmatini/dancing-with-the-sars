@@ -31,19 +31,39 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      :root { --ink: #142b2c; --teal: #0d7d75; --sand: #e8c98e; }
-      .stApp { background: linear-gradient(180deg, #f4faf8 0%, #ffffff 24%); }
+      :root { --ink: #000000; --teal: #0d7d75; --sand: #e8c98e; }
+      .stApp {
+        background: #ffffff;
+        color: #000000;
+      }
+      [data-testid="stMain"],
+      [data-testid="stMain"] p,
+      [data-testid="stMain"] span,
+      [data-testid="stMain"] label,
+      [data-testid="stMain"] li,
+      [data-testid="stMain"] small,
+      [data-testid="stMain"] h1,
+      [data-testid="stMain"] h2,
+      [data-testid="stMain"] h3,
+      [data-testid="stMarkdownContainer"],
+      [data-testid="stCaptionContainer"],
+      [data-testid="stMetricLabel"],
+      [data-testid="stMetricValue"],
+      [data-testid="stMetricDelta"] {
+        color: #000000;
+      }
       [data-testid="stSidebar"] { background: #102f31; }
       [data-testid="stSidebar"] * { color: #f4fbf8 !important; }
       .hero {
         border-radius: 18px; padding: 1.35rem 1.6rem; margin-bottom: 1rem;
-        color: white; background:
+        color: #ffffff !important; background:
           radial-gradient(circle at 87% 20%, rgba(232,201,142,.32), transparent 24%),
           linear-gradient(120deg, #102f31 0%, #0d6c66 100%);
         box-shadow: 0 12px 30px rgba(20,43,44,.12);
       }
+      .hero h1, .hero p { color: #ffffff !important; }
       .hero h1 { margin: 0; font-size: 2rem; letter-spacing: -.03em; }
-      .hero p { margin: .45rem 0 0; max-width: 760px; color: #dcefeb; }
+      .hero p { margin: .45rem 0 0; max-width: 760px; }
       .mock-chip {
         display: inline-block; font-size: .72rem; font-weight: 700;
         letter-spacing: .09em; padding: .25rem .5rem; border-radius: 999px;
@@ -58,8 +78,9 @@ st.markdown(
       }
       h2, h3 { color: var(--ink); letter-spacing: -.02em; }
       .source-note {
-        padding: .7rem .85rem; border-radius: 10px; background: #eef7f4;
-        border-left: 4px solid #0d7d75; color: #315252; font-size: .87rem;
+        padding: .7rem .85rem; border-radius: 10px; background: #ffffff;
+        border: 1px solid #dceae6; border-left: 4px solid #0d7d75;
+        color: #000000; font-size: .87rem;
       }
     </style>
     """,
@@ -82,12 +103,12 @@ def risk_label(value: float) -> tuple[str, str]:
 
 def base_chart_layout(title: str, y_title: str) -> dict:
     return {
-        "title": {"text": title, "x": 0.02, "font": {"size": 17, "color": "#142b2c"}},
+        "title": {"text": title, "x": 0.02, "font": {"size": 17, "color": "#000000"}},
         "height": 340,
         "margin": {"l": 45, "r": 18, "t": 56, "b": 42},
         "paper_bgcolor": "white",
         "plot_bgcolor": "white",
-        "font": {"family": "Inter, sans-serif", "color": "#315252"},
+        "font": {"family": "Inter, sans-serif", "color": "#000000"},
         "yaxis": {"title": y_title, "gridcolor": "#e7efed", "zerolinecolor": "#bbcfc9"},
         "xaxis": {"gridcolor": "#eef3f2"},
         "hovermode": "x unified",
@@ -179,7 +200,7 @@ def raster_figure(values: np.ndarray, x: np.ndarray, y: np.ndarray, title: str, 
         paper_bgcolor="white",
         xaxis_title="Longitude",
         yaxis_title="Latitude",
-        font={"family": "Inter, sans-serif", "color": "#315252"},
+        font={"family": "Inter, sans-serif", "color": "#000000"},
     )
     fig.update_yaxes(scaleanchor="x", scaleratio=1)
     return fig
