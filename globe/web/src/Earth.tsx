@@ -25,7 +25,7 @@ import { Entity, useCesium, Viewer } from "resium";
 import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
 import type { FlowPath, RiskGrid, SitePin } from "./types";
-import type { WindField } from "./wind";
+import { windStrength, type WindField } from "./wind";
 
 const ionToken = import.meta.env.VITE_CESIUM_ION_TOKEN;
 if (ionToken) Ion.defaultAccessToken = ionToken;
@@ -525,8 +525,8 @@ export function Earth({
           position={arrow.position}
           billboard={{
             image: arrowMarker,
-            width: 22,
-            height: 30,
+            width: 22 * windStrength(arrow.speed_kmh).scale,
+            height: 30 * windStrength(arrow.speed_kmh).scale,
             rotation: arrow.rotation,
             verticalOrigin: VerticalOrigin.CENTER,
             disableDepthTestDistance: 0,

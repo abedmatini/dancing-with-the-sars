@@ -16,6 +16,13 @@ export type WindField = {
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
+/** Arrow length for the map key. Light, moderate, and strong are speed bands, not a warning. */
+export function windStrength(speed: number): { label: string; scale: number } {
+  if (speed < 12) return { label: "light", scale: 0.7 };
+  if (speed < 39) return { label: "moderate", scale: 1.05 };
+  return { label: "strong", scale: 1.5 };
+}
+
 export function windPhrase(speed: number, direction: number): string {
   if (speed < 1) return "calm";
   const wrapped = ((direction % 360) + 360) % 360;
