@@ -53,7 +53,27 @@ st.markdown(
         color: #000000;
       }
       [data-testid="stSidebar"] { background: #102f31; }
-      [data-testid="stSidebar"] * { color: #f4fbf8 !important; }
+      [data-testid="stSidebar"] * { color: #f7fffc !important; }
+      [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+      [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {
+        color: #f7fffc !important;
+        font-size: 0.95rem !important;
+        line-height: 1.45 !important;
+        opacity: 1 !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stAlert"] {
+        background: #e7f5f2 !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stAlert"] * {
+        color: #10231f !important;
+        background: transparent !important;
+        font-size: 0.95rem !important;
+      }
+      [data-testid="stMain"] .hero,
+      [data-testid="stMain"] .hero h1,
+      [data-testid="stMain"] .hero p {
+        color: #ffffff !important;
+      }
       .hero {
         border-radius: 18px; padding: 1.35rem 1.6rem; margin-bottom: 1rem;
         color: #ffffff !important; background:
@@ -61,13 +81,12 @@ st.markdown(
           linear-gradient(120deg, #102f31 0%, #0d6c66 100%);
         box-shadow: 0 12px 30px rgba(20,43,44,.12);
       }
-      .hero h1, .hero p { color: #ffffff !important; }
       .hero h1 { margin: 0; font-size: 2rem; letter-spacing: -.03em; }
       .hero p { margin: .45rem 0 0; max-width: 760px; }
       .mock-chip {
         display: inline-block; font-size: .72rem; font-weight: 700;
         letter-spacing: .09em; padding: .25rem .5rem; border-radius: 999px;
-        background: #f1d59f; color: #4a3512; margin-bottom: .65rem;
+        background: #f1d59f !important; color: #1a1208 !important; margin-bottom: .65rem;
       }
       [data-testid="stMetric"] {
         background: white; border: 1px solid #dceae6; padding: .85rem 1rem;
@@ -93,6 +112,10 @@ def get_site_data(site_id: str):
     return load_site_data(site_id, source="mock")
 
 
+RISK_LEGEND = "Low 0–39.9 · Medium 40–64.9 · High 65–100"
+CHART_TEXT = {"family": "Inter, sans-serif", "color": "#000000", "size": 13}
+
+
 def risk_label(value: float) -> tuple[str, str]:
     if value >= 65:
         return "High", "#c43d3d"
@@ -105,14 +128,19 @@ def base_chart_layout(title: str, y_title: str) -> dict:
     return {
         "title": {"text": title, "x": 0.02, "font": {"size": 17, "color": "#000000"}},
         "height": 340,
-        "margin": {"l": 45, "r": 18, "t": 56, "b": 42},
+        "margin": {"l": 52, "r": 18, "t": 56, "b": 42},
         "paper_bgcolor": "white",
         "plot_bgcolor": "white",
-        "font": {"family": "Inter, sans-serif", "color": "#000000"},
-        "yaxis": {"title": y_title, "gridcolor": "#e7efed", "zerolinecolor": "#bbcfc9"},
-        "xaxis": {"gridcolor": "#eef3f2"},
+        "font": CHART_TEXT,
+        "yaxis": {
+            "title": {"text": y_title, "font": CHART_TEXT},
+            "tickfont": CHART_TEXT,
+            "gridcolor": "#e7efed",
+            "zerolinecolor": "#bbcfc9",
+        },
+        "xaxis": {"tickfont": CHART_TEXT, "title": {"font": CHART_TEXT}, "gridcolor": "#eef3f2"},
         "hovermode": "x unified",
-        "legend": {"orientation": "h", "y": 1.14, "x": 0},
+        "legend": {"orientation": "h", "y": 1.16, "x": 0, "font": CHART_TEXT},
     }
 
 
@@ -169,7 +197,14 @@ def soil_chart(site, selected_time: pd.Timestamp) -> go.Figure:
         line={"color": "#0d7d75", "width": 3},
         hovertemplate="%{y:.3f} m³/m³<extra>Site mean</extra>",
     )
-    fig.add_vline(x=selected_time.timestamp() * 1000, line_dash="dot", line_color="#c43d3d")
+    fig.add_scatter(
+        x=[selected_time, selected_time],
+        y=[0.04, 0.39],
+        mode="lines",
+        name="Selected slider date",
+        line={"color": "#c43d3d", "width": 2, "dash": "dot"},
+        hovertemplate=f"{selected_time:%d %b %Y}<extra>Selected slider date</extra>",
+    )
     fig.update_layout(**base_chart_layout("NISAR-like soil moisture trend", "Soil moisture (m³/m³)"))
     fig.update_yaxes(range=[0.04, 0.39])
     return fig
@@ -189,7 +224,11 @@ def raster_figure(values: np.ndarray, x: np.ndarray, y: np.ndarray, title: str, 
             colorscale=colorscale,
             zmin=zmin,
             zmax=zmax,
-            colorbar={"title": label, "thickness": 12},
+            colorbar={
+                "title": {"text": label, "font": CHART_TEXT},
+                "tickfont": CHART_TEXT,
+                "thickness": 14,
+            },
             hovertemplate="Lon %{x:.4f}<br>Lat %{y:.4f}<br>Value %{z:.1f}<extra></extra>",
         )
     )
@@ -198,11 +237,19 @@ def raster_figure(values: np.ndarray, x: np.ndarray, y: np.ndarray, title: str, 
         height=360,
         margin={"l": 45, "r": 20, "t": 55, "b": 40},
         paper_bgcolor="white",
-        xaxis_title="Longitude",
-        yaxis_title="Latitude",
-        font={"family": "Inter, sans-serif", "color": "#000000"},
+        font=CHART_TEXT,
+        legend={"font": CHART_TEXT},
+        xaxis={
+            "title": {"text": "Longitude", "font": CHART_TEXT},
+            "tickfont": CHART_TEXT,
+        },
+        yaxis={
+            "title": {"text": "Latitude", "font": CHART_TEXT},
+            "tickfont": CHART_TEXT,
+            "scaleanchor": "x",
+            "scaleratio": 1,
+        },
     )
-    fig.update_yaxes(scaleanchor="x", scaleratio=1)
     return fig
 
 
@@ -247,7 +294,7 @@ def site_map(site, risk_values: np.ndarray) -> folium.Map:
         origin="upper",
         zindex=2,
     ).add_to(fmap)
-    palette.caption = "Runoff / erosion risk index (0–100)"
+    palette.caption = f"Runoff / erosion risk · {RISK_LEGEND}"
     palette.add_to(fmap)
     folium.LayerControl(collapsed=False).add_to(fmap)
     return fmap
@@ -293,6 +340,16 @@ with control_col:
         options=available_times,
         value=available_times[-1],
         format_func=lambda value: value.strftime("%d %b %Y"),
+        help=(
+            "Moving this slider updates the risk map, soil-moisture and runoff "
+            "metrics, scene interpretation, risk heatmap, and the red dotted "
+            "line on the soil-moisture chart."
+        ),
+    )
+    st.caption(
+        "Moving the slider updates the map, the soil-moisture, runoff-risk and "
+        "high-risk metrics, the scene interpretation, the risk heatmap, and the "
+        "red dotted marker on the soil-moisture chart."
     )
 with note_col:
     st.markdown(
@@ -310,15 +367,38 @@ risk_name, risk_color = risk_label(mean_risk)
 latest_rain = site.rainfall.iloc[-1]
 high_area = float((class_slice == 2).mean()) * 100
 
+rain_month = latest_rain.time.strftime("%B %Y")
+rain_help = (
+    f"{latest_rain.percent_normal:.0f}% is {rain_month} observed rainfall as a "
+    f"percent of that month's 1991–2020 climatology "
+    f"({latest_rain.observed_mm:.1f} mm ÷ {latest_rain.climatology_mm:.1f} mm). "
+    f"The {latest_rain.anomaly_mm:.0f} mm figure is the anomaly for the same month: "
+    "observed millimetres minus the climatology, rounded to the nearest millimetre. "
+    "A negative anomaly is a rainfall deficit. This card uses the latest rainfall "
+    "month and does not follow the observation slider."
+)
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("Rainfall vs normal", f"{latest_rain.percent_normal:.0f}%", f"{latest_rain.anomaly_mm:.0f} mm")
+k1.metric(
+    "Rainfall vs normal",
+    f"{latest_rain.percent_normal:.0f}%",
+    f"{latest_rain.anomaly_mm:.0f} mm vs climatology",
+    help=rain_help,
+)
+k1.caption(f"{rain_month} percent of the 1991–2020 monthly climatology. Delta: observed minus climatology.")
 k2.metric("Mean soil moisture", f"{mean_soil:.3f} m³/m³", "12-day scene")
-k3.metric("Runoff risk", risk_name, f"Index {mean_risk:.0f}/100")
+k3.metric(
+    "Runoff risk",
+    risk_name,
+    f"Index {mean_risk:.0f}/100",
+    help=f"Scene-average risk index. Classes: {RISK_LEGEND}.",
+)
+k3.caption(RISK_LEGEND)
 k4.metric("High-risk pixels", f"{high_area:.1f}%", f"{int((class_slice == 2).sum())} cells")
 
 st.subheader("Study area & current risk surface")
 map_col, context_col = st.columns([1.7, 1])
 with map_col:
+    st.caption(f"Map classes follow the risk index. {RISK_LEGEND}.")
     st_folium(
         site_map(site, risk_slice.values),
         height=475,
@@ -343,8 +423,8 @@ with context_col:
     else:
         st.success("Lower scene-average runoff signal; continue monitoring local hotspots.")
     st.caption(
-        "Prototype index = 50% slope + 32% soil wetness + 18% burn flag. "
-        "It is an explainable hackathon indicator, not a calibrated hazard model."
+        f"Classes: {RISK_LEGEND}. Prototype index = 50% slope + 32% soil wetness "
+        "+ 18% burn flag. It is an explainable hackathon indicator, not a calibrated hazard model."
     )
     st.download_button(
         "Download mock slope GeoTIFF",
@@ -357,9 +437,13 @@ with context_col:
 st.subheader("Drought signals")
 rain_col, soil_col = st.columns(2)
 with rain_col:
-    st.plotly_chart(rainfall_chart(site.rainfall), width="stretch")
+    st.plotly_chart(rainfall_chart(site.rainfall), width="stretch", theme=None)
 with soil_col:
-    st.plotly_chart(soil_chart(site, selected_time), width="stretch")
+    st.plotly_chart(soil_chart(site, selected_time), width="stretch", theme=None)
+    st.caption(
+        "The red dotted line, labelled Selected slider date, marks the date "
+        "chosen on the NISAR 12-day observation slider."
+    )
 
 st.subheader("Terrain controls & derived hazard")
 slope_col, risk_col = st.columns(2)
@@ -373,6 +457,7 @@ with slope_col:
             "slope",
         ),
         width="stretch",
+        theme=None,
     )
 with risk_col:
     st.plotly_chart(
@@ -384,7 +469,9 @@ with risk_col:
             "risk",
         ),
         width="stretch",
+        theme=None,
     )
+    st.caption(f"Heatmap classes: {RISK_LEGEND}.")
 
 with st.expander("Data contract & Earthdata hand-off"):
     st.code(
