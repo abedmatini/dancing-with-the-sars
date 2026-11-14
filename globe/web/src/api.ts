@@ -1,4 +1,4 @@
-import type { Catalog, DemoFile, RiskGrid, Scene, SourceMode } from "./types";
+import type { Catalog, DemoFile, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
 
 const configured = import.meta.env.VITE_API_BASE;
 const fallback = import.meta.env.PROD
@@ -123,6 +123,90 @@ export async function fetchGrid(
   if (date && entry.grids[date]) return entry.grids[date];
   const dates = Object.keys(entry.grids);
   return entry.grids[dates[dates.length - 1]] ?? null;
+}
+
+function cleanRiverName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.trim();
+  if (!name || name.toLowerCase() === "unknown" || name.toLowerCase() === "null") return null;
+  return name;
+}
+
+function simplifyPath(coordinates: [number, number][]): [number, number][] {
+  if (coordinates.length < 3) return coordinates;
+  const kept: [number, number][] = [coordinates[0]];
+  for (const point of coordinates.slice(1)) {
+    const last = kept[kept.length - 1];
+    const north = (point[1] - last[1]) * 110.54;
+    const east = (point[0] - last[0]) * 111.32 * Math.cos((((point[1] + last[1]) / 2) * Math.PI) / 180);
+    if (Math.hypot(east, north) >= 1.2) kept.push(point);
+  }
+  const end = coordinates[coordinates.length - 1];
+  if (kept[kept.length - 1][0] !== end[0] || kept[kept.length - 1][1] !== end[1]) kept.push(end);
+  if (kept.length <= 420) return kept;
+  const stride = Math.ceil(kept.length / 420);
+  const trimmed = kept.filter((_, index) => index % stride === 0);
+  trimmed.push(end);
+  return trimmed;
+}
+
+function pathFromMerit(payload: unknown): FlowPath | null {
+  const features = (payload as { value?: { features?: Array<{ properties?: Record<string, unknown>; geometry?: { coordinates?: number[][] } }> } })
+    ?.value?.features;
+  if (!features?.length) return null;
+  const coordinates: [number, number][] = [];
+  const rivers: FlowPath["rivers"] = [];
+  const seen = new Set<string>();
+  for (const feature of features) {
+    const coords = feature.geometry?.coordinates ?? [];
+    for (const pair of coords) {
+      if (pair.length >= 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1])) {
+        coordinates.push([pair[0], pair[1]]);
+      }
+    }
+    const name = cleanRiverName(feature.properties?.gnis_name) ?? cleanRiverName(feature.properties?.nameid);
+    if (name && !seen.has(name) && coords.length) {
+      seen.add(name);
+      const mid = coords[Math.floor(coords.length / 2)] ?? coords[0];
+      rivers.push({ name, lon: mid[0], lat: mid[1] });
+    }
+  }
+  if (coordinates.length < 2) return null;
+  const simplified = simplifyPath(coordinates);
+  let length = 0;
+  for (let index = 1; index < simplified.length; index += 1) {
+    const start = simplified[index - 1];
+    const end = simplified[index];
+    const north = (end[1] - start[1]) * 110.54;
+    const east = (end[0] - start[0]) * 111.32 * Math.cos((((end[1] + start[1]) / 2) * Math.PI) / 180);
+    length += Math.hypot(east, north);
+  }
+  const summary = rivers.length
+    ? `Rain from this spot runs downstream through ${rivers
+        .slice(0, 4)
+        .map((river) => river.name)
+        .join(", ")}.`
+    : length < 2
+      ? "This spot is already near the downstream end, so the blue path is short and this stretch has no named river."
+      : "Rain from this spot has a downstream path. This stretch has no named river in the global river map.";
+  return { coordinates: simplified, rivers: rivers.slice(0, 6), summary, credit: "MERIT-Basins" };
+}
+
+/** Prefer the globe API, which adds OpenStreetMap names. Fall back to MERIT directly. */
+export async function fetchFlow(lat: number, lon: number): Promise<FlowPath | null> {
+  if (await apiReachable()) {
+    const response = await fetchOk(`${API_BASE}/flow?lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}`);
+    if (response) return (await response.json()) as FlowPath;
+  }
+  try {
+    const response = await fetch(
+      `https://merit.internetofwater.app/processes/river-runner/execution?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lon))}`,
+    );
+    if (!response.ok) return null;
+    return pathFromMerit(await response.json());
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchSummary(

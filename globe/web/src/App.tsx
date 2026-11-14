@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchCatalog, fetchGrid, fetchScene } from "./api";
+import { fetchCatalog, fetchFlow, fetchGrid, fetchScene } from "./api";
 import { Earth } from "./Earth";
 import { Panel } from "./Panel";
-import type { Catalog, RiskGrid, Scene, SourceMode } from "./types";
+import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
+import { fetchWind, type WindField } from "./wind";
 
 const TOUR = [
   { name: "Cape Town", lat: -33.9628, lon: 18.4098 },
@@ -35,6 +36,9 @@ export default function App() {
   const [showDaily, setShowDaily] = useState(false);
   const [showFire, setShowFire] = useState(false);
   const [showSoil, setShowSoil] = useState(false);
+  const [showSatellites, setShowSatellites] = useState(false);
+  const [flow, setFlow] = useState<FlowPath | null>(null);
+  const [wind, setWind] = useState<WindField | null>(null);
   const [busy, setBusy] = useState(false);
   const [approximate, setApproximate] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -75,7 +79,7 @@ export default function App() {
         const index = Math.max(0, dates.indexOf(current ?? scene.date));
         return dates[(index + 1) % dates.length] ?? scene.date;
       });
-    }, 900);
+    }, 1400);
     return () => window.clearInterval(timer);
   }, [playing, scene]);
 
@@ -100,6 +104,33 @@ export default function App() {
         if (token === request.current) setGrid(null);
       });
   }, [focus, date, source]);
+
+  useEffect(() => {
+    if (!focus) return;
+    let cancelled = false;
+    setFlow(null);
+    void fetchFlow(focus.lat, focus.lon).then((path) => {
+      if (!cancelled) setFlow(path);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [focus]);
+
+  useEffect(() => {
+    if (!focus || !date) return;
+    let cancelled = false;
+    const box =
+      scene && Math.abs(scene.lat - focus.lat) < 0.2 && Math.abs(scene.lon - focus.lon) < 0.2
+        ? { west: scene.west, south: scene.south, east: scene.east, north: scene.north }
+        : null;
+    void fetchWind(focus.lat, focus.lon, date, box).then((field) => {
+      if (!cancelled) setWind(field);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [focus, date, scene]);
 
   async function openAt(
     lat: number,
@@ -154,6 +185,9 @@ export default function App() {
         basemap={basemap}
         pins={pins}
         grid={panelOpen ? grid : null}
+        flow={panelOpen ? flow : null}
+        wind={panelOpen ? wind : null}
+        showSatellites={showSatellites}
         target={focus ? { ...focus, key: flyKey } : null}
         spinning={spinning}
         showDaily={showDaily}
@@ -248,7 +282,22 @@ export default function App() {
           <button type="button" className={`rounded-full px-3 py-2 ${showSoil ? "bg-lime-300 text-slate-950" : "bg-[#0c1522]/90"}`} onClick={() => setShowSoil((value) => !value)}>
             Soil moisture
           </button>
+          <button
+            type="button"
+            className={`rounded-full px-3 py-2 ${showSatellites ? "bg-cyan-300 text-slate-950" : "bg-[#0c1522]/90"}`}
+            onClick={() => {
+              setSpinning(false);
+              setShowSatellites((value) => !value);
+            }}
+          >
+            Satellites
+          </button>
         </div>
+        {showSatellites ? (
+          <p className="pointer-events-auto max-w-xl text-xs text-slate-300">
+            Illustrated orbits for Sentinel-1, Landsat, and NISAR. Not a live tracking feed.
+          </p>
+        ) : null}
         {offline ? (
           <p className="pointer-events-auto max-w-xl rounded-xl bg-amber-200/10 px-3 py-2 text-sm text-amber-50">
             The API is unreachable, so pins and charts are coming from the bundled demo.
@@ -272,6 +321,8 @@ export default function App() {
           approximate={approximate}
           busy={busy}
           source={source}
+          flow={flow}
+          wind={wind}
           onDate={(next) => {
             setPlaying(false);
             setDate(next);

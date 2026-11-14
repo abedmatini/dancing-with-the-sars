@@ -75,3 +75,10 @@ export type DemoFile = {
 };
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
+
+export type FlowPath = {
+  coordinates: [number, number][];
+  rivers: { name: string; lon: number; lat: number }[];
+  summary: string;
+  credit: string;
+};

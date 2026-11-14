@@ -1,10 +1,15 @@
 import {
+  CallbackPositionProperty,
+  Cartesian2,
   Cartesian3,
   Cartographic,
   Color,
+  CzmlDataSource,
   EllipsoidTerrainProvider,
   ImageMaterialProperty,
   Ion,
+  JulianDate,
+  LabelStyle,
   Math as CesiumMath,
   NearFarScalar,
   Rectangle,
@@ -14,36 +19,61 @@ import {
   VerticalOrigin,
   type ImageryLayer,
 } from "cesium";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Entity, useCesium, Viewer } from "resium";
 import { baseLayer, fireProvider, modisProvider, soilProvider } from "./imagery";
-import type { RiskGrid, SitePin } from "./types";
+import { satelliteCzml } from "./satellites";
+import type { FlowPath, RiskGrid, SitePin } from "./types";
+import type { WindField } from "./wind";
 
 const ionToken = import.meta.env.VITE_CESIUM_ION_TOKEN;
 if (ionToken) Ion.defaultAccessToken = ionToken;
 
 const ellipsoidTerrain = new EllipsoidTerrainProvider();
-const pinScale = new NearFarScalar(1.5e6, 1.25, 2.5e7, 0.9);
+const pinScale = new NearFarScalar(2e5, 1.2, 2.2e7, 0.7);
+const BOX_SCALE = 1.65;
 
 function pinImage(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
-  canvas.width = 64;
-  canvas.height = 64;
+  canvas.width = 96;
+  canvas.height = 96;
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
-  ctx.clearRect(0, 0, 64, 64);
+  ctx.clearRect(0, 0, 96, 96);
   ctx.beginPath();
-  ctx.arc(32, 32, 24, 0, Math.PI * 2);
+  ctx.arc(48, 48, 40, 0, Math.PI * 2);
   ctx.fillStyle = "#041018";
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(32, 32, 15, 0, Math.PI * 2);
+  ctx.arc(48, 48, 26, 0, Math.PI * 2);
   ctx.fillStyle = "#7ee7ff";
   ctx.fill();
   return canvas;
 }
 
+function arrowImage(): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = 48;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+  ctx.clearRect(0, 0, 48, 64);
+  ctx.fillStyle = "rgba(226, 242, 255, 0.92)";
+  ctx.beginPath();
+  ctx.moveTo(24, 6);
+  ctx.lineTo(36, 28);
+  ctx.lineTo(28, 28);
+  ctx.lineTo(28, 56);
+  ctx.lineTo(20, 56);
+  ctx.lineTo(20, 28);
+  ctx.lineTo(12, 28);
+  ctx.closePath();
+  ctx.fill();
+  return canvas;
+}
+
 const pinMarker = pinImage();
+const arrowMarker = arrowImage();
 
 type FlyTarget = { lat: number; lon: number; key: number };
 
@@ -53,23 +83,138 @@ function riskColor(score: number): Color {
   return Color.fromHsl(hue / 360, 0.85, 0.5, 0.78);
 }
 
+function grownBounds(grid: RiskGrid) {
+  const lat = (grid.north + grid.south) / 2;
+  const lon = (grid.east + grid.west) / 2;
+  const halfLat = ((grid.north - grid.south) / 2) * BOX_SCALE;
+  const halfLon = ((grid.east - grid.west) / 2) * BOX_SCALE;
+  return {
+    west: lon - halfLon,
+    east: lon + halfLon,
+    south: lat - halfLat,
+    north: lat + halfLat,
+  };
+}
+
+function frameHeight(west: number, south: number, east: number, north: number): number {
+  const lat = (south + north) / 2;
+  const widthM = Math.abs(east - west) * 111_320 * Math.cos((lat * Math.PI) / 180);
+  const heightM = Math.abs(north - south) * 110_540;
+  const span = Math.max(widthM, heightM, 4_000);
+  const visible = span / 0.5;
+  const height = visible / 2 / Math.tan(Math.PI / 6);
+  return Math.min(60_000, Math.max(9_000, height));
+}
+
+function paintHeat(grid: RiskGrid): HTMLCanvasElement {
+  const source = document.createElement("canvas");
+  source.width = Math.max(1, grid.cols);
+  source.height = Math.max(1, grid.rows);
+  const sourceContext = source.getContext("2d");
+  const output = document.createElement("canvas");
+  output.width = 640;
+  output.height = 640;
+  if (!sourceContext) return output;
+  const pixels = sourceContext.createImageData(source.width, source.height);
+  for (let row = 0; row < source.height; row += 1) {
+    for (let col = 0; col < source.width; col += 1) {
+      const [red, green, blue, alpha] = riskColor(grid.values[row]?.[col] ?? 0).toBytes();
+      const index = (row * source.width + col) * 4;
+      pixels.data[index] = red;
+      pixels.data[index + 1] = green;
+      pixels.data[index + 2] = blue;
+      pixels.data[index + 3] = alpha;
+    }
+  }
+  sourceContext.putImageData(pixels, 0, 0);
+  const outputContext = output.getContext("2d");
+  if (!outputContext) return source;
+  outputContext.imageSmoothingEnabled = true;
+  outputContext.imageSmoothingQuality = "high";
+  outputContext.filter = "blur(1.1px)";
+  outputContext.drawImage(source, 0, 0, output.width, output.height);
+  return output;
+}
+
+function blendHeat(from: HTMLCanvasElement, to: HTMLCanvasElement, amount: number): HTMLCanvasElement {
+  const output = document.createElement("canvas");
+  output.width = to.width;
+  output.height = to.height;
+  const ctx = output.getContext("2d");
+  if (!ctx) return to;
+  ctx.drawImage(from, 0, 0, output.width, output.height);
+  ctx.globalAlpha = amount;
+  ctx.drawImage(to, 0, 0, output.width, output.height);
+  return output;
+}
+
+function useFadingHeat(grid: RiskGrid | null): HTMLCanvasElement | null {
+  const [frame, setFrame] = useState<HTMLCanvasElement | null>(null);
+  const previous = useRef<HTMLCanvasElement | null>(null);
+  const previousDate = useRef<string | null>(null);
+  useEffect(() => {
+    if (!grid) {
+      setFrame(null);
+      previous.current = null;
+      previousDate.current = null;
+      return;
+    }
+    const next = paintHeat(grid);
+    const from = previous.current;
+    const same = previousDate.current === grid.date;
+    previous.current = next;
+    previousDate.current = grid.date;
+    if (!from || same) {
+      setFrame(next);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / 900);
+      const eased = t * t * (3 - 2 * t);
+      setFrame(blendHeat(from, next, eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [grid]);
+  return frame;
+}
+
+function driftingPosition(lat: number, lon: number, directionFrom: number, speed: number) {
+  const to = (((directionFrom + 180) % 360) * Math.PI) / 180;
+  const step = Math.min(0.02, 0.004 + speed / 2500);
+  return new CallbackPositionProperty((time) => {
+    const ms = time ? JulianDate.toDate(time).getTime() : Date.now();
+    const phase = (ms % 6000) / 6000;
+    const lat2 = lat + Math.cos(to) * step * phase;
+    const lon2 = lon + (Math.sin(to) * step * phase) / Math.max(0.25, Math.cos((lat * Math.PI) / 180));
+    return Cartesian3.fromDegrees(lon2, lat2, 700);
+  }, false);
+}
+
 function GlobeEffects({
   pins,
   target,
+  grid,
   spinning,
   showDaily,
   showFire,
   showSoil,
+  showSatellites,
   onStopSpin,
   onPick,
   zoomStep,
 }: {
   pins: SitePin[];
   target: FlyTarget | null;
+  grid: RiskGrid | null;
   spinning: boolean;
   showDaily: boolean;
   showFire: boolean;
   showSoil: boolean;
+  showSatellites: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
   zoomStep: number;
@@ -107,36 +252,33 @@ function GlobeEffects({
     handler.setInputAction(stop, ScreenSpaceEventType.WHEEL);
     handler.setInputAction(stop, ScreenSpaceEventType.PINCH_START);
     handler.setInputAction((click: ScreenSpaceEventHandler.PositionedEvent) => {
-        stop();
-        const picked = viewer.scene.pick(click.position);
-        const entityId = picked?.id?.id;
-        const pin =
-          typeof entityId === "string"
-            ? pinsRef.current.find((site) => site.id === entityId)
-            : undefined;
-        if (pin) {
-          pickRef.current(pin.lat, pin.lon);
-          return;
-        }
-        const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
-        if (!cartesian) return;
-        const cartographic = Cartographic.fromCartesian(cartesian);
-        pickRef.current(
-          CesiumMath.toDegrees(cartographic.latitude),
-          CesiumMath.toDegrees(cartographic.longitude),
-        );
+      stop();
+      const picked = viewer.scene.pick(click.position);
+      const entityId = picked?.id?.id;
+      const pin =
+        typeof entityId === "string" ? pinsRef.current.find((site) => site.id === entityId) : undefined;
+      if (pin) {
+        pickRef.current(pin.lat, pin.lon);
+        return;
+      }
+      const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+      if (!cartesian) return;
+      const cartographic = Cartographic.fromCartesian(cartesian);
+      pickRef.current(CesiumMath.toDegrees(cartographic.latitude), CesiumMath.toDegrees(cartographic.longitude));
     }, ScreenSpaceEventType.LEFT_CLICK);
     return () => handler.destroy();
   }, [viewer]);
 
   useEffect(() => {
     if (!viewer || !target) return;
+    const bounds = grid ? grownBounds(grid) : null;
+    const height = bounds ? frameHeight(bounds.west, bounds.south, bounds.east, bounds.north) : 18_000;
     viewer.camera.flyTo({
-      destination: Cartesian3.fromDegrees(target.lon, target.lat, 70000),
+      destination: Cartesian3.fromDegrees(target.lon, target.lat, height),
       orientation: { heading: 0, pitch: CesiumMath.toRadians(-90), roll: 0 },
-      duration: 2.4,
+      duration: 1.6,
     });
-  }, [viewer, target]);
+  }, [viewer, target, grid?.west, grid?.south, grid?.east, grid?.north]);
 
   const zoomSeen = useRef(zoomStep);
   useEffect(() => {
@@ -174,47 +316,52 @@ function GlobeEffects({
     };
   }, [viewer, showDaily, showFire, showSoil]);
 
-  return null;
-}
-
-function heatCanvas(grid: RiskGrid): HTMLCanvasElement {
-  const source = document.createElement("canvas");
-  source.width = Math.max(1, grid.cols);
-  source.height = Math.max(1, grid.rows);
-  const sourceContext = source.getContext("2d");
-  const output = document.createElement("canvas");
-  output.width = 256;
-  output.height = 256;
-  if (!sourceContext) return output;
-  const pixels = sourceContext.createImageData(source.width, source.height);
-  for (let row = 0; row < source.height; row += 1) {
-    for (let col = 0; col < source.width; col += 1) {
-      const [red, green, blue, alpha] = riskColor(grid.values[row]?.[col] ?? 0).toBytes();
-      const index = (row * source.width + col) * 4;
-      pixels.data[index] = red;
-      pixels.data[index + 1] = green;
-      pixels.data[index + 2] = blue;
-      pixels.data[index + 3] = alpha;
+  useEffect(() => {
+    if (!viewer) return;
+    if (!showSatellites) {
+      viewer.clock.shouldAnimate = false;
+      return;
     }
-  }
-  sourceContext.putImageData(pixels, 0, 0);
-  const outputContext = output.getContext("2d");
-  if (!outputContext) return source;
-  outputContext.imageSmoothingEnabled = true;
-  outputContext.imageSmoothingQuality = "high";
-  outputContext.drawImage(source, 0, 0, output.width, output.height);
-  return output;
+    let cancelled = false;
+    let source: CzmlDataSource | null = null;
+    const height = viewer.camera.positionCartographic.height;
+    if (height < 8_000_000) {
+      const place = viewer.camera.positionCartographic;
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromRadians(place.longitude, place.latitude, 16_000_000),
+        orientation: { heading: 0, pitch: CesiumMath.toRadians(-90), roll: 0 },
+        duration: 1.5,
+      });
+    }
+    void CzmlDataSource.load(satelliteCzml()).then((loaded) => {
+      if (cancelled || viewer.isDestroyed()) return;
+      source = loaded;
+      viewer.dataSources.add(loaded);
+      viewer.clock.shouldAnimate = true;
+      viewer.clock.multiplier = 160;
+    });
+    return () => {
+      cancelled = true;
+      if (source && !viewer.isDestroyed()) viewer.dataSources.remove(source, true);
+      if (!viewer.isDestroyed()) viewer.clock.shouldAnimate = false;
+    };
+  }, [viewer, showSatellites]);
+
+  return null;
 }
 
 export function Earth({
   basemap,
   pins,
   grid,
+  flow,
+  wind,
   target,
   spinning,
   showDaily,
   showFire,
   showSoil,
+  showSatellites,
   onStopSpin,
   onPick,
   zoomStep,
@@ -222,17 +369,30 @@ export function Earth({
   basemap: "gibs" | "osm";
   pins: SitePin[];
   grid: RiskGrid | null;
+  flow: FlowPath | null;
+  wind: WindField | null;
   target: FlyTarget | null;
   spinning: boolean;
   showDaily: boolean;
   showFire: boolean;
   showSoil: boolean;
+  showSatellites: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
   zoomStep: number;
 }) {
   const imagery = useMemo(() => baseLayer(basemap), [basemap]);
-  const heat = useMemo(() => (grid ? heatCanvas(grid) : null), [grid]);
+  const heat = useFadingHeat(grid);
+  const bounds = grid ? grownBounds(grid) : null;
+  const windMarks = useMemo(
+    () =>
+      (wind?.arrows ?? []).map((arrow) => ({
+        ...arrow,
+        position: driftingPosition(arrow.lat, arrow.lon, arrow.direction_deg, arrow.speed_kmh),
+        rotation: -CesiumMath.toRadians((arrow.direction_deg + 180) % 360),
+      })),
+    [wind],
+  );
   return (
     <Viewer
       key={basemap}
@@ -255,10 +415,12 @@ export function Earth({
       <GlobeEffects
         pins={pins}
         target={target}
+        grid={grid}
         spinning={spinning}
         showDaily={showDaily && basemap === "gibs"}
         showFire={showFire}
         showSoil={showSoil}
+        showSatellites={showSatellites}
         onStopSpin={onStopSpin}
         onPick={onPick}
         zoomStep={zoomStep}
@@ -271,38 +433,78 @@ export function Earth({
           position={Cartesian3.fromDegrees(site.lon, site.lat, 80)}
           billboard={{
             image: pinMarker,
-            width: 16,
-            height: 16,
+            width: 48,
+            height: 48,
             verticalOrigin: VerticalOrigin.CENTER,
             scaleByDistance: pinScale,
             disableDepthTestDistance: 0,
           }}
         />
       ))}
-      {grid ? (
+      {grid && bounds ? (
         <Entity
           polyline={{
             positions: Cartesian3.fromDegreesArrayHeights([
-              grid.west, grid.south, 500,
-              grid.east, grid.south, 500,
-              grid.east, grid.north, 500,
-              grid.west, grid.north, 500,
-              grid.west, grid.south, 500,
+              bounds.west, bounds.south, 500,
+              bounds.east, bounds.south, 500,
+              bounds.east, bounds.north, 500,
+              bounds.west, bounds.north, 500,
+              bounds.west, bounds.south, 500,
             ]),
-            width: 3,
+            width: 4,
             material: Color.fromCssColorString("#7ee7ff"),
           }}
         />
       ) : null}
-      {grid && heat ? (
+      {grid && bounds && heat ? (
         <Entity
           rectangle={{
-            coordinates: Rectangle.fromDegrees(grid.west, grid.south, grid.east, grid.north),
+            coordinates: Rectangle.fromDegrees(bounds.west, bounds.south, bounds.east, bounds.north),
             material: new ImageMaterialProperty({ image: heat, transparent: true }),
             height: 400,
           }}
         />
       ) : null}
+      {flow && flow.coordinates.length > 1 ? (
+        <Entity
+          polyline={{
+            positions: Cartesian3.fromDegreesArrayHeights(flow.coordinates.flatMap(([lon, lat]) => [lon, lat, 1200])),
+            width: 4,
+            material: Color.fromCssColorString("#9ad7ff"),
+          }}
+        />
+      ) : null}
+      {flow?.rivers.map((river) => (
+        <Entity
+          key={`${river.name}-${river.lon}-${river.lat}`}
+          position={Cartesian3.fromDegrees(river.lon, river.lat, 1400)}
+          label={{
+            text: river.name,
+            font: "600 15px sans-serif",
+            fillColor: Color.WHITE,
+            outlineColor: Color.fromCssColorString("#041018"),
+            outlineWidth: 3,
+            style: LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cartesian2(0, -18),
+            disableDepthTestDistance: 800_000,
+            scaleByDistance: new NearFarScalar(2e4, 1, 4e6, 0.45),
+          }}
+        />
+      ))}
+      {windMarks.map((arrow) => (
+        <Entity
+          key={`${arrow.lat.toFixed(3)}-${arrow.lon.toFixed(3)}`}
+          position={arrow.position}
+          billboard={{
+            image: arrowMarker,
+            width: 22,
+            height: 30,
+            rotation: arrow.rotation,
+            verticalOrigin: VerticalOrigin.CENTER,
+            disableDepthTestDistance: 0,
+          }}
+        />
+      ))}
     </Viewer>
   );
 }

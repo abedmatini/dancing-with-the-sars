@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from drought_monitor.assistant import answer_question, podcast_script, summarize_view
+from globe.api.rivers import downstream
 from globe.api.serialize import context_for, locate, preset_catalog, risk_grid, scene_payload
 
 app = FastAPI(title="Dancing with the SARs globe", version="1.0.0")
@@ -76,6 +77,13 @@ def grid(
 ) -> dict:
     located = locate(lat, lon, source)
     return risk_grid(located, date)
+
+
+@app.get("/flow")
+def flow(lat: float = Query(...), lon: float = Query(...)) -> dict:
+    if not -90 <= lat <= 90 or not -180 <= lon <= 180:
+        raise HTTPException(status_code=422, detail="lat/lon out of range")
+    return downstream(lat, lon)
 
 
 @app.get("/summary")
