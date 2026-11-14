@@ -29,6 +29,7 @@ def test_all_sites_follow_the_data_contract():
         assert site.soil_moisture["soil_moisture"].shape[1:] == GRID_SHAPE
         assert site.soil_moisture.attrs["crs"] == "EPSG:4326"
         assert site.soil_moisture["soil_moisture"].attrs["units"] == "m3 m-3"
+        assert site.runoff_risk["risk_index"].dims == ("time", "y", "x")
         assert set(np.unique(site.runoff_risk["risk_class"])) <= {0, 1, 2}
         assert np.isfinite(site.runoff_risk["risk_index"]).all()
 

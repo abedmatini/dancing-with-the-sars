@@ -309,7 +309,7 @@ def _calculate_runoff_risk(
     wetness_factor = np.clip((soil["soil_moisture"] - 0.10) / 0.24, 0.0, 1.0)
     # Burned terrain has less interception and greater sediment mobility.
     index = 100 * (0.50 * slope_factor + 0.32 * wetness_factor + 0.18 * burn_mask)
-    index = index.clip(0, 100).astype("float32")
+    index = index.clip(0, 100).astype("float32").transpose("time", "y", "x")
     risk_class = xr.where(index >= 65, 2, xr.where(index >= 40, 1, 0)).astype("uint8")
     return xr.Dataset(
         {

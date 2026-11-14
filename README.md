@@ -32,6 +32,17 @@ streamlit run app.py
 
 Streamlit prints the local URL, normally `http://localhost:8501`.
 
+The deployment-ready static edition uses the same generated mock data and needs
+only Python's standard library to serve:
+
+```bash
+bash scripts/start_static.sh
+```
+
+Open `http://localhost:8000`. Hosts can set `PORT`; the script binds to
+`0.0.0.0`. Its health check is `/health.html`. The `Procfile` uses this static
+edition because it works on both process-based and static Cursor Apps hosting.
+
 Run the data-contract tests with:
 
 ```bash
@@ -41,8 +52,10 @@ pytest -q
 Regenerate the committed summary after changing mock generation:
 
 ```bash
-python -c "from drought_monitor.data import write_summary; write_summary()"
+python3 scripts/build_web_data.py
 ```
+
+This refreshes `exports/summary.json` and the browser assets under `web/data/`.
 
 ## Swap in real Earthdata
 
@@ -69,6 +82,11 @@ or dashboard logic needs source-specific changes.
 app.py                    Streamlit user interface
 drought_monitor/data.py   Mock generator, data contract, real-loader seam
 exports/summary.json      Reusable deterministic mock summary
+web/                      Static Leaflet + Plotly dashboard for Cursor Apps
+scripts/build_web_data.py Rebuild static data from the canonical loader
+scripts/start_static.sh   PORT-aware static production start command
+Procfile                  Process-host start declaration
+PUBLISH.md                One-step Cursor Apps agent hand-off prompt
 tests/test_data.py        Data shape, determinism and GeoTIFF tests
 requirements.txt          Open-source Python dependencies
 ```

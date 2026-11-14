@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Mock NISAR drought and runoff-risk monitoring for three Cape Town study sites."
+    />
+    <title>Dancing with the SARs</title>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.plot.ly" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQ3ynhH8PqjMZHpMZ1Ira5dFVZ0z0wM="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+      defer
+    ></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Dancing with the SARs home">
+        <span class="brand-mark">◉</span>
+        <span>Dancing with the SARs</span>
+      </a>
+      <div class="mission">NASA Space Apps 2026 concept</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <span class="mock-pill">MOCK DATA · PROTOTYPE</span>
+          <h1>Read the landscape<br />before the rain arrives.</h1>
+          <p>
+            NISAR-shaped soil moisture, Cape winter rainfall, terrain and fire
+            history reveal drought stress and runoff hotspots across Cape Town.
+          </p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <span>12</span>
+          <small>DAY ORBIT</small>
+        </div>
+      </section>
+
+      <section class="control-panel" aria-label="Dashboard controls">
+        <label>
+          <span>Study site</span>
+          <select id="site-select"></select>
+        </label>
+        <label class="time-control">
+          <span>NISAR-like observation</span>
+          <input id="time-slider" type="range" min="0" value="0" />
+          <strong id="selected-date">Loading…</strong>
+        </label>
+        <div class="source-note">
+          <span class="status-dot"></span>
+          Deterministic synthetic data<br />
+          <small>Earthdata-compatible contract</small>
+        </div>
+      </section>
+
+      <section id="loading-state" class="state-card">Loading dashboard data…</section>
+      <section id="error-state" class="state-card error" hidden>
+        Dashboard data could not be loaded. Serve the repository over HTTP and
+        rebuild assets with <code>python3 scripts/build_web_data.py</code>.
+      </section>
+
+      <div id="dashboard" hidden>
+        <section class="site-heading">
+          <div>
+            <p class="eyebrow">ACTIVE STUDY AREA</p>
+            <h2 id="site-name"></h2>
+            <p id="site-description"></p>
+          </div>
+          <div class="legend-inline" aria-label="Risk legend">
+            <span><i class="low"></i> Low</span>
+            <span><i class="medium"></i> Medium</span>
+            <span><i class="high"></i> High</span>
+          </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="Key indicators">
+          <article class="kpi">
+            <span>Rainfall vs normal</span>
+            <strong id="rain-kpi">—</strong>
+            <small id="rain-detail">Latest month</small>
+          </article>
+          <article class="kpi">
+            <span>Mean soil moisture</span>
+            <strong id="soil-kpi">—</strong>
+            <small>m³/m³ · scene mean</small>
+          </article>
+          <article class="kpi risk-kpi">
+            <span>Runoff / erosion risk</span>
+            <strong id="risk-kpi">—</strong>
+            <small id="risk-detail">Index 0–100</small>
+          </article>
+          <article class="kpi">
+            <span>High-risk pixels</span>
+            <strong id="high-kpi">—</strong>
+            <small id="terrain-detail">Derived grid cells</small>
+          </article>
+        </section>
+
+        <section class="map-section">
+          <div class="section-copy">
+            <p class="eyebrow">SPATIAL SIGNAL</p>
+            <h2>Current runoff and erosion risk</h2>
+            <p>
+              Scene risk combines terrain slope, surface wetness and recent burn
+              scars. Select a date to follow changing wetness through the dry-down.
+            </p>
+          </div>
+          <div class="map-shell">
+            <div id="map" role="img" aria-label="Cape Town study sites and risk grid"></div>
+            <div class="map-scale">
+              <span>0</span><div class="gradient"></div><span>100</span>
+              <small>risk index</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <article class="chart-card">
+            <div class="card-heading">
+              <span>RAINFALL DEFICIT</span>
+              <small>monthly · 2026</small>
+            </div>
+            <div id="rainfall-chart" class="chart"></div>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <span>SOIL MOISTURE TREND</span>
+              <small>12-day repeat</small>
+            </div>
+            <div id="soil-chart" class="chart"></div>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <span>TERRAIN SLOPE</span>
+              <small>degrees</small>
+            </div>
+            <div id="slope-chart" class="chart"></div>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <span>RUNOFF / EROSION RISK</span>
+              <small id="risk-chart-date">selected scene</small>
+            </div>
+            <div id="risk-chart" class="chart"></div>
+          </article>
+        </section>
+
+        <section class="method">
+          <strong>Transparent prototype index</strong>
+          <span>50% normalized slope</span>
+          <span>32% surface wetness</span>
+          <span>18% recent burn flag</span>
+          <p>
+            This is an explainable hackathon indicator, not a calibrated hazard
+            model and not suitable for operational decisions.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <span>Dancing with the SARs</span>
+      <span>MOCK DATA · Cape Town, South Africa</span>
+    </footer>
+  </body>
+</html>
