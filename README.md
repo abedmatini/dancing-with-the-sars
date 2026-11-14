@@ -5,9 +5,8 @@ Town study sites. It is a NASA Space Apps 2026 hackathon prototype showing how
 NISAR L-band radar soil-moisture observations can be combined with rainfall,
 terrain and recent fire information.
 
-> Every value currently shown is deterministic **mock data**. The synthetic
-> products are shaped and attributed like likely Earthdata inputs, but they
-> must not be used for operational decisions.
+> The default view is deterministic **mock data**. The sidebar can switch to
+> NASA Earthdata. Neither view is for operational decisions.
 
 ## What is included
 
@@ -31,6 +30,10 @@ streamlit run app.py
 ```
 
 Streamlit prints the local URL, normally `http://localhost:8501`.
+
+**Ask about this data** opens a chat about the current site, slider date, and
+metrics. **Summarize this view** writes four to six sentences. Both work with
+no API key. A key is optional; see the secrets table below.
 
 The deployment-ready static edition uses the same generated mock data and needs
 only Python's standard library to serve:
@@ -98,6 +101,19 @@ EARTHDATA_TOKEN = "paste-token-here"
 
 Reboot the app after saving the secret. Do not commit the token.
 
+### Secrets
+
+| Name | Where it is used |
+| --- | --- |
+| `EARTHDATA_TOKEN` | NISAR HDF5 downloads. Without it, Earthdata mode keeps public POWER and Copernicus layers and a mock burn mask. |
+| `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` | Optional pair. If both are set, the missing-token banner stays hidden. Downloads in this app still use `EARTHDATA_TOKEN`. |
+| `GEMINI_API_KEY` | Google Gemini answers for **Ask about this data** and **Summarize this view**. Optional `GEMINI_MODEL` (default `gemini-2.5-flash`). |
+| `LLM_API_KEY` | OpenAI-compatible chat. Used instead of Gemini when set. |
+| `LLM_BASE_URL` | Optional. Defaults to `https://api.openai.com/v1`. |
+| `LLM_MODEL` | Optional. Defaults to `gpt-4o-mini`. |
+
+Put the same names in `.streamlit/secrets.toml` locally, or in Streamlit Cloud under **App settings > Secrets**. With no language-model key, both buttons still answer from the numbers on the page.
+
 ## Project layout
 
 ```text
@@ -110,6 +126,7 @@ scripts/start_static.sh   PORT-aware static production start command
 Procfile                  Process-host start declaration
 PUBLISH.md                One-step Cursor Apps agent hand-off prompt
 tests/test_data.py        Data shape, determinism and GeoTIFF tests
+tests/test_assistant.py   On-page summary and no-key chat fallback
 requirements.txt          Open-source Python dependencies
 ```
 

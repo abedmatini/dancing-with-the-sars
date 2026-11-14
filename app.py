@@ -13,6 +13,15 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
 
+from drought_monitor.assistant import (
+    NO_KEY_NOTICE,
+    answer_question,
+    build_context,
+    earthdata_credentials_present,
+    earthdata_token_notice,
+    llm_provider,
+    summarize_view,
+)
 from drought_monitor.data import (
     build_summary,
     list_sites,
@@ -337,6 +346,12 @@ with st.sidebar:
         st.info(f"NASA EARTHDATA\n\n{layer_text}")
     else:
         st.info("MOCK / SYNTHETIC\n\nEarthdata-compatible shapes; no operational decisions.")
+    if not earthdata_credentials_present():
+        st.caption(
+            "No EARTHDATA_TOKEN is set, so NISAR files stay on NASA's servers. "
+            "Add EARTHDATA_TOKEN in Streamlit Cloud > App settings > Secrets. "
+            "Free signup: https://urs.earthdata.nasa.gov"
+        )
     st.markdown("**Mission concept**")
     st.caption(
         "A NASA Space Apps 2026 prototype combining L-band soil moisture, "
@@ -354,7 +369,19 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-if site.metadata.get("fallback"):
+using_mock = source == "mock" or bool(site.metadata.get("fallback"))
+if not earthdata_credentials_present() and not st.session_state.get("hide_earthdata_notice"):
+    notice_parts = [earthdata_token_notice(using_mock)]
+    if site.metadata.get("notice"):
+        notice_parts.append(site.metadata["notice"])
+    notice_col, dismiss_col = st.columns([6, 1])
+    with notice_col:
+        st.warning("\n\n".join(notice_parts))
+    with dismiss_col:
+        if st.button("Dismiss", key="dismiss_earthdata_notice"):
+            st.session_state.hide_earthdata_notice = True
+            st.rerun()
+elif site.metadata.get("fallback"):
     st.warning(site.metadata["notice"])
 elif site.metadata.get("notice"):
     st.info(site.metadata["notice"])
@@ -424,6 +451,64 @@ k3.metric(
 )
 k3.caption(RISK_LEGEND)
 k4.metric("High-risk pixels", f"{high_area:.1f}%", f"{int((class_slice == 2).sum())} cells")
+
+view_context = build_context(
+    site_name=site.name,
+    slider_date=selected_time.strftime("%d %B %Y"),
+    rain_month=rain_month,
+    percent_normal=float(latest_rain.percent_normal),
+    anomaly_mm=float(latest_rain.anomaly_mm),
+    climatology_name=climatology_name,
+    soil_value=mean_soil,
+    soil_unit=soil_unit_label,
+    soil_first=float(site.soil_moisture["soil_moisture"].isel(time=0).mean()),
+    risk_score=mean_risk,
+    risk_class=risk_name,
+    burned_percent=float(site.burn_mask.mean()) * 100,
+    mean_slope=float(site.slope.mean()),
+    source_mode=source,
+    using_mock=using_mock,
+)
+st.session_state["view_context"] = view_context
+
+
+def _close_chat() -> None:
+    st.session_state.open_chat = False
+
+
+@st.dialog("Ask about this data", width="large", on_dismiss=_close_chat)
+def ask_about_data() -> None:
+    context = st.session_state["view_context"]
+    if llm_provider() is None:
+        st.info(NO_KEY_NOTICE)
+    messages = st.session_state.setdefault("qa_messages", [])
+    for message in messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+    question = st.chat_input("Ask about the numbers on this page")
+    if question:
+        reply, provider = answer_question(question, context)
+        messages.append({"role": "user", "content": question})
+        messages.append({"role": "assistant", "content": reply})
+        st.session_state["qa_provider"] = provider
+        st.rerun()
+
+
+ask_col, summary_col = st.columns(2)
+if ask_col.button("Ask about this data", width="stretch"):
+    st.session_state.open_chat = True
+if st.session_state.get("open_chat"):
+    ask_about_data()
+if summary_col.button("Summarize this view", width="stretch"):
+    summary_text, summary_provider = summarize_view(view_context)
+    st.session_state["view_summary"] = summary_text
+    st.session_state["summary_provider"] = summary_provider
+if st.session_state.get("view_summary"):
+    st.markdown(st.session_state["view_summary"])
+    if st.session_state.get("summary_provider") == "page":
+        st.caption("On-page summary. Add GEMINI_API_KEY or LLM_API_KEY to use a language model.")
+    else:
+        st.caption(f"Summary from {st.session_state['summary_provider']}.")
 
 st.subheader("Study area & current risk surface")
 map_col, context_col = st.columns([1.7, 1])
