@@ -90,7 +90,7 @@ def test_risk_grid_summary_and_chat_without_a_key(monkeypatch):
     assert briefing["provider"] == "page"
     assert "land buyer" in briefing["text"]
     assert "fire crew" in briefing["text"]
-    assert "not a forecast" in briefing["text"]
+    assert "not a climate forecast" in briefing["text"]
 
     unknown = client.post(
         "/chat",
@@ -122,3 +122,22 @@ def test_database_reads_saved_sites_only(monkeypatch):
     missing = client.get("/site", params={"lat": 1.234, "lon": 36.543, "source": "database"})
     assert missing.status_code == 404
     assert missing.json()["detail"] == "Nothing is stored for this place."
+
+
+def test_site_cache_keeps_one_bundle(monkeypatch):
+    from globe.api import serialize
+
+    serialize._CACHE.clear()
+    loaded: list[str] = []
+
+    def fake(site_id, source="mock"):
+        loaded.append(site_id)
+        return site_id
+
+    monkeypatch.setattr("drought_monitor.data.load_site_data", fake)
+    assert serialize._cached_load("alpha", "mock") == "alpha"
+    assert serialize._cached_load("beta", "earthdata") == "beta"
+    assert list(serialize._CACHE) == [("beta", "earthdata")]
+    assert serialize._cached_load("beta", "earthdata") == "beta"
+    assert loaded == ["alpha", "beta"]
+    serialize._CACHE.clear()
