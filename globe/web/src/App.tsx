@@ -6,6 +6,7 @@ import { Earth } from "./Earth";
 import { Panel } from "./Panel";
 import { ShowcaseRing } from "./ShowcaseRing";
 import { loadShowcase, type ShowcaseFrame, type ShowcaseSpot } from "./showcase";
+import { fetchShowcaseWeather, type DayWeather } from "./showcaseWeather";
 import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
 import { fetchWind, type WindField } from "./wind";
 
@@ -84,6 +85,8 @@ export default function App() {
   const [enlarged, setEnlarged] = useState<ShowcaseFrame | null>(null);
   const [reading, setReading] = useState("");
   const [readingBusy, setReadingBusy] = useState(false);
+  const [radarWeather, setRadarWeather] = useState<Record<string, Record<string, DayWeather>>>({});
+  const [radarWeatherReady, setRadarWeatherReady] = useState<Record<string, boolean>>({});
   const [focus, setFocus] = useState<{ lat: number; lon: number } | null>(null);
   const [tourLabel, setTourLabel] = useState("");
   const [dataNote, setDataNote] = useState(false);
@@ -93,7 +96,25 @@ export default function App() {
   const pins = useMemo(() => catalog?.groups.flatMap((group) => group.sites) ?? [], [catalog]);
 
   useEffect(() => {
-    void loadShowcase().then(setRadarSpots);
+    let cancelled = false;
+    void loadShowcase().then((spots) => {
+      if (cancelled) return;
+      setRadarSpots(spots);
+      for (const spot of spots) {
+        void fetchShowcaseWeather(
+          spot.lat,
+          spot.lon,
+          spot.frames.map((frame) => frame.date),
+        ).then((days) => {
+          if (cancelled) return;
+          setRadarWeather((current) => ({ ...current, [spot.id]: days }));
+          setRadarWeatherReady((current) => ({ ...current, [spot.id]: true }));
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -303,6 +324,8 @@ export default function App() {
           enlarged={enlarged}
           reading={reading}
           readingBusy={readingBusy}
+          weather={radarOpenId ? radarWeather[radarOpenId] ?? {} : {}}
+          weatherReady={radarOpenId ? radarWeatherReady[radarOpenId] === true : false}
           onEnlarge={setEnlarged}
           onCloseEnlarge={() => setEnlarged(null)}
           onClose={() => {
@@ -313,7 +336,17 @@ export default function App() {
             const spot = radarSpots.find((item) => item.id === radarOpenId);
             if (!spot) return;
             setReadingBusy(true);
-            void readShowcase(spot.id).then((result) => {
+            void fetchShowcaseWeather(
+              spot.lat,
+              spot.lon,
+              spot.frames.map((frame) => frame.date),
+            ).then((days) => {
+              const rows = spot.frames.flatMap((frame) => {
+                const day = days[frame.date];
+                return day ? [day] : [];
+              });
+              return readShowcase(spot.id, rows);
+            }).then((result) => {
               setReading(result.error ? result.error : result.answer);
               setReadingBusy(false);
             });

@@ -41,8 +41,16 @@ class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
 
 
+class ShowcaseWeatherDay(BaseModel):
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    rain_mm: float | None = None
+    temperature_c: float | None = None
+    soil_moisture: float | None = None
+
+
 class ShowcaseReadRequest(BaseModel):
     id: str = Field(min_length=1, max_length=80)
+    weather: list[ShowcaseWeatherDay] = Field(default_factory=list, max_length=12)
 
 
 def _view(lat: float, lon: float, source: str, date: str | None) -> dict:
@@ -128,7 +136,7 @@ def podcast(
 
 @app.post("/showcase/read")
 def showcase_read(body: ShowcaseReadRequest) -> dict:
-    return read_showcase(body.id)
+    return read_showcase(body.id, [day.model_dump() for day in body.weather])
 
 
 @app.post("/chat")
