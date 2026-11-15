@@ -14,8 +14,7 @@ import {
 import { fetchChat, fetchPodcast, fetchSummary } from "./api";
 import { drynessOutlook } from "./outlook";
 import { briefingScript, sceneCadence, speakBriefing, stopBriefing } from "./podcast";
-import type { ChatTurn, FlowPath, Scene, SourceMode } from "./types";
-import type { WindField } from "./wind";
+import type { ChatTurn, Scene, SourceMode } from "./types";
 
 const chartTip = {
   contentStyle: {
@@ -40,8 +39,6 @@ export function Panel({
   approximate,
   busy,
   source,
-  flow,
-  wind,
   onDate,
   onPlaying,
   onSource,
@@ -54,8 +51,6 @@ export function Panel({
   approximate: boolean;
   busy: boolean;
   source: SourceMode;
-  flow: FlowPath | null;
-  wind: WindField | null;
   onDate: (date: string) => void;
   onPlaying: (playing: boolean) => void;
   onSource: (source: SourceMode) => void;
@@ -92,15 +87,12 @@ export function Panel({
       setSpeaking(false);
       return;
     }
-    const local = briefingScript(scene, date, wind?.label);
+    const local = briefingScript(scene, date);
     setBriefing(local);
     setSpeaking(true);
     setVoiceNote("Getting a voice…");
     const live = await fetchPodcast(scene.lat, scene.lon, scene.source, date);
-    let script = live?.text?.trim() ? live.text.trim() : local;
-    if (wind?.label && !/wind/i.test(script)) {
-      script = `${script} Wind is ${wind.label}.`;
-    }
+    const script = live?.text?.trim() ? live.text.trim() : local;
     setBriefing(script);
     try {
       await speakBriefing(script, setVoiceNote);
@@ -210,21 +202,10 @@ export function Panel({
           <Metric label="Runoff class" value={risk.class} detail={`${risk.score.toFixed(0)} / 100`} />
           <Metric label="Burned share" value={`${scene.burned_percent.toFixed(1)}%`} detail="of the grid" />
           <Metric label="Mean slope" value={`${scene.slope.mean.toFixed(1)}°`} detail={`${scene.slope.min.toFixed(0)}–${scene.slope.max.toFixed(0)}°`} />
-          <Metric label="Wind" value={wind ? wind.label : "…"} detail={wind ? wind.credit : "Open-Meteo"} />
         </div>
         <p className="text-[11px] leading-relaxed text-slate-500">
           The color field is drawn wider than the 5 km box so the pattern is easier to see. The figures stay on that box.
         </p>
-        <section className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-200/80">Downstream</p>
-          <p className="mt-1 text-sm leading-relaxed text-slate-200">
-            {flow ? flow.summary : "Tracing where rain from this spot runs…"}
-          </p>
-          {flow?.rivers.length ? (
-            <p className="mt-2 text-xs text-slate-400">{flow.rivers.map((river) => river.name).join(" · ")}</p>
-          ) : null}
-          {flow ? <p className="mt-2 text-[11px] text-slate-500">{flow.credit}</p> : null}
-        </section>
         <p className="text-xs text-slate-400">{scene.risk.ranges}</p>
         <section className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.06] px-3 py-3">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-200/80">Buying land here?</p>

@@ -1,5 +1,4 @@
 import {
-  CallbackPositionProperty,
   Cartesian2,
   Cartesian3,
   Cartographic,
@@ -10,11 +9,9 @@ import {
   EllipsoidTerrainProvider,
   ImageMaterialProperty,
   Ion,
-  JulianDate,
   LabelStyle,
   Math as CesiumMath,
   NearFarScalar,
-  PolylineGlowMaterialProperty,
   Rectangle,
   SceneTransforms,
   ScreenSpaceEventHandler,
@@ -28,8 +25,7 @@ import { Entity, useCesium, Viewer } from "resium";
 import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
 import type { ShowcaseSpot } from "./showcase";
-import type { FlowPath, RiskGrid, SitePin } from "./types";
-import { windStrength, type WindField } from "./wind";
+import type { RiskGrid, SitePin } from "./types";
 
 const HOME_VIEW = { lon: 18, lat: -22, height: 21_000_000 };
 const ionToken = import.meta.env.VITE_CESIUM_ION_TOKEN;
@@ -38,27 +34,6 @@ if (ionToken) Ion.defaultAccessToken = ionToken;
 const ellipsoidTerrain = new EllipsoidTerrainProvider();
 const pinScale = new NearFarScalar(2e5, 1.2, 2.2e7, 0.7);
 const BOX_SCALE = 1.65;
-
-function arrowImage(): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = 48;
-  canvas.height = 64;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-  ctx.clearRect(0, 0, 48, 64);
-  ctx.fillStyle = "rgba(226, 242, 255, 0.92)";
-  ctx.beginPath();
-  ctx.moveTo(24, 6);
-  ctx.lineTo(36, 28);
-  ctx.lineTo(28, 28);
-  ctx.lineTo(28, 56);
-  ctx.lineTo(20, 56);
-  ctx.lineTo(20, 28);
-  ctx.lineTo(12, 28);
-  ctx.closePath();
-  ctx.fill();
-  return canvas;
-}
 
 function showcasePinImage(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -82,7 +57,6 @@ function showcasePinImage(): HTMLCanvasElement {
 }
 
 const showcaseMarker = showcasePinImage();
-const arrowMarker = arrowImage();
 
 type FlyTarget = { lat: number; lon: number; key: number };
 
@@ -187,18 +161,6 @@ function useFadingHeat(grid: RiskGrid | null): HTMLCanvasElement | null {
     return () => cancelAnimationFrame(raf);
   }, [grid]);
   return frame;
-}
-
-function driftingPosition(lat: number, lon: number, directionFrom: number, speed: number) {
-  const to = (((directionFrom + 180) % 360) * Math.PI) / 180;
-  const step = Math.min(0.02, 0.004 + speed / 2500);
-  return new CallbackPositionProperty((time) => {
-    const ms = time ? JulianDate.toDate(time).getTime() : Date.now();
-    const phase = (ms % 6000) / 6000;
-    const lat2 = lat + Math.cos(to) * step * phase;
-    const lon2 = lon + (Math.sin(to) * step * phase) / Math.max(0.25, Math.cos((lat * Math.PI) / 180));
-    return Cartesian3.fromDegrees(lon2, lat2, 700);
-  }, false);
 }
 
 function GlobeEffects({
@@ -476,8 +438,6 @@ export function Earth({
   basemap,
   pins,
   grid,
-  flow,
-  wind,
   target,
   spinning,
   showDaily,
@@ -499,8 +459,6 @@ export function Earth({
   basemap: "gibs" | "osm";
   pins: SitePin[];
   grid: RiskGrid | null;
-  flow: FlowPath | null;
-  wind: WindField | null;
   target: FlyTarget | null;
   spinning: boolean;
   showDaily: boolean;
@@ -522,15 +480,6 @@ export function Earth({
   const imagery = useMemo(() => baseLayer(basemap), [basemap]);
   const heat = useFadingHeat(grid);
   const bounds = grid ? grownBounds(grid) : null;
-  const windMarks = useMemo(
-    () =>
-      (wind?.arrows ?? []).map((arrow) => ({
-        ...arrow,
-        position: driftingPosition(arrow.lat, arrow.lon, arrow.direction_deg, arrow.speed_kmh),
-        rotation: -CesiumMath.toRadians((arrow.direction_deg + 180) % 360),
-      })),
-    [wind],
-  );
   return (
     <Viewer
       key={basemap}
@@ -621,48 +570,6 @@ export function Earth({
           }}
         />
       ) : null}
-      {flow && flow.coordinates.length > 1 ? (
-        <Entity
-          polyline={{
-            positions: Cartesian3.fromDegreesArrayHeights(flow.coordinates.flatMap(([lon, lat]) => [lon, lat, 1200])),
-            width: 4,
-            material: new PolylineGlowMaterialProperty({
-              color: Color.fromCssColorString("#9ad7ff"),
-            }),
-          }}
-        />
-      ) : null}
-      {flow?.rivers.map((river) => (
-        <Entity
-          key={`${river.name}-${river.lon}-${river.lat}`}
-          position={Cartesian3.fromDegrees(river.lon, river.lat, 1400)}
-          label={{
-            text: river.name,
-            font: "600 15px sans-serif",
-            fillColor: Color.WHITE,
-            outlineColor: Color.fromCssColorString("#041018"),
-            outlineWidth: 3,
-            style: LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cartesian2(0, -18),
-            disableDepthTestDistance: 800_000,
-            scaleByDistance: new NearFarScalar(2e4, 1, 4e6, 0.45),
-          }}
-        />
-      ))}
-      {windMarks.map((arrow) => (
-        <Entity
-          key={`${arrow.lat.toFixed(3)}-${arrow.lon.toFixed(3)}`}
-          position={arrow.position}
-          billboard={{
-            image: arrowMarker,
-            width: 22 * windStrength(arrow.speed_kmh).scale,
-            height: 30 * windStrength(arrow.speed_kmh).scale,
-            rotation: arrow.rotation,
-            verticalOrigin: VerticalOrigin.CENTER,
-            disableDepthTestDistance: 0,
-          }}
-        />
-      ))}
     </Viewer>
   );
 }

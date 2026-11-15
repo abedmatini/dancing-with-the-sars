@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchCatalog, fetchFlow, fetchGrid, fetchScene, readShowcase } from "./api";
+import { fetchCatalog, fetchGrid, fetchScene, readShowcase } from "./api";
 import { DataNote } from "./DataNote";
 import { MapKey } from "./MapKey";
 import { Earth } from "./Earth";
@@ -7,8 +7,7 @@ import { Panel } from "./Panel";
 import { ShowcaseRing } from "./ShowcaseRing";
 import { loadShowcase, type ShowcaseFrame, type ShowcaseSpot } from "./showcase";
 import { fetchShowcaseWeather, type DayWeather } from "./showcaseWeather";
-import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
-import { fetchWind, type WindField } from "./wind";
+import type { Catalog, RiskGrid, Scene, SourceMode } from "./types";
 
 const DATA_NOTE_KEY = "sars-globe-nasa-note";
 
@@ -67,11 +66,7 @@ export default function App() {
   const [showFire, setShowFire] = useState(false);
   const [showSoil, setShowSoil] = useState(false);
   const [showSatellites, setShowSatellites] = useState(true);
-  const [showWind, setShowWind] = useState(true);
-  const [showRivers, setShowRivers] = useState(true);
   const [showRisk, setShowRisk] = useState(true);
-  const [flow, setFlow] = useState<FlowPath | null>(null);
-  const [wind, setWind] = useState<WindField | null>(null);
   const [busy, setBusy] = useState(false);
   const [approximate, setApproximate] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -196,33 +191,6 @@ export default function App() {
       });
   }, [focus, date, source]);
 
-  useEffect(() => {
-    if (!focus) return;
-    let cancelled = false;
-    setFlow(null);
-    void fetchFlow(focus.lat, focus.lon).then((path) => {
-      if (!cancelled) setFlow(path);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [focus]);
-
-  useEffect(() => {
-    if (!focus || !date) return;
-    let cancelled = false;
-    const box =
-      scene && Math.abs(scene.lat - focus.lat) < 0.2 && Math.abs(scene.lon - focus.lon) < 0.2
-        ? { west: scene.west, south: scene.south, east: scene.east, north: scene.north }
-        : null;
-    void fetchWind(focus.lat, focus.lon, date, box).then((field) => {
-      if (!cancelled) setWind(field);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [focus, date, scene]);
-
   async function openAt(
     lat: number,
     lon: number,
@@ -281,8 +249,6 @@ export default function App() {
         basemap={basemap}
         pins={pins}
         grid={grid}
-        flow={showRivers ? flow : null}
-        wind={showWind ? wind : null}
         showSatellites={showSatellites}
         showRisk={showRisk}
         target={focus ? { ...focus, key: flyKey } : null}
@@ -408,8 +374,6 @@ export default function App() {
               setPanelOpen(false);
               setFocus(null);
               setGrid(null);
-              setFlow(null);
-              setWind(null);
               setHomeStep((value) => value + 1);
             }}
             className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
@@ -463,12 +427,6 @@ export default function App() {
           >
             Satellites
           </LayerButton>
-          <LayerButton on={showWind} activeClass="bg-slate-100 text-slate-950" onClick={() => setShowWind((value) => !value)}>
-            Wind
-          </LayerButton>
-          <LayerButton on={showRivers} activeClass="bg-sky-200 text-slate-950" onClick={() => setShowRivers((value) => !value)}>
-            Rivers
-          </LayerButton>
           <LayerButton on={showRisk} activeClass="bg-amber-200 text-slate-950" onClick={() => setShowRisk((value) => !value)}>
             Risk colors
           </LayerButton>
@@ -495,7 +453,7 @@ export default function App() {
         <DataNote onClose={dismissDataNote} />
       ) : (
         <div className={panelOpen ? "max-md:hidden" : undefined}>
-          <MapKey wind={wind} />
+          <MapKey />
         </div>
       )}
       {panelOpen && scene ? (
@@ -507,8 +465,6 @@ export default function App() {
           approximate={approximate}
           busy={busy}
           source={source}
-          flow={flow}
-          wind={wind}
           onDate={(next) => {
             setPlaying(false);
             setDate(next);

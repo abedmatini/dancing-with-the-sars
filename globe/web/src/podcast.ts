@@ -47,7 +47,7 @@ function seasonNotes(date: string, lat: number): { opening: string; farm: string
 }
 
 /** About 30 seconds when read aloud. Uses only numbers already on the scene. */
-export function briefingScript(scene: Scene, date: string, windLabel?: string | null): string {
+export function briefingScript(scene: Scene, date: string): string {
   const soil = scene.soil_moisture.map((row) => row.value);
   const first = soil[0] ?? scene.soil_value;
   const selected = scene.soil_moisture.find((row) => row.date === date)?.value ?? soil[soil.length - 1] ?? scene.soil_value;
@@ -56,7 +56,6 @@ export function briefingScript(scene: Scene, date: string, windLabel?: string | 
     selected > first + 0.01 ? "up since the first scene" : selected < first - 0.01 ? "down since the first scene" : "about the same as the first scene";
   const { opening, farm } = seasonNotes(date, scene.lat);
   const source = scene.using_mock ? "This is the seeded demo" : "This uses the loaded satellite series";
-  const wind = windLabel ? ` Wind is ${windLabel}.` : "";
   return (
     `${scene.name}, ${date}. ${opening} ` +
     `Rain is ${Math.round(scene.percent_normal)} percent of normal. Soil is ${soilShort}. ` +
@@ -64,7 +63,7 @@ export function briefingScript(scene: Scene, date: string, windLabel?: string | 
     `Burned share is ${Math.round(scene.burned_percent)} percent, on a ${Math.round(scene.slope.mean)} degree slope. ` +
     `A land buyer uses this as a dryness check. ${farm} ` +
     `A fire crew watches steep burned slopes, which shed sediment after rain. ` +
-    `An insurer treats ${risk.class} as today's flag, not a promise.${wind} ` +
+    `An insurer treats ${risk.class} as today's flag, not a promise. ` +
     `${source}. This reading is not a climate forecast and not advice to buy or walk away.`
   );
 }
