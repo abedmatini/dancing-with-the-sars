@@ -272,12 +272,21 @@ export async function fetchPodcast(
 
 export async function readShowcase(
   id: string,
+  weather: { date: string; rainMm: number | null; temperatureC: number | null; soilMoisture: number | null }[] = [],
 ): Promise<{ answer: string; provider: string; error: string | null }> {
   try {
     const response = await fetch(`${API_BASE}/showcase/read`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({
+        id,
+        weather: weather.map((day) => ({
+          date: day.date,
+          rain_mm: day.rainMm,
+          temperature_c: day.temperatureC,
+          soil_moisture: day.soilMoisture,
+        })),
+      }),
     });
     if (!response.ok) {
       return {
