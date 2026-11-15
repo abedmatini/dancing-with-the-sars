@@ -92,7 +92,7 @@ export function satelliteCzml() {
   return [
     {
       id: "document",
-      name: "Illustrated orbits",
+      name: "NISAR orbit",
       version: "1.0",
       clock: {
         interval: "2026-11-14T00:00:00Z/2026-11-14T04:00:00Z",
@@ -103,22 +103,10 @@ export function satelliteCzml() {
       },
     },
     packet(
-      "sentinel-1",
-      "Sentinel-1",
-      [126, 231, 255, 255],
-      samples({ altitudeM: 693_000, inclinationDeg: 98.2, periodMin: 98.6, raanDeg: 18, phaseDeg: 0, ...common }),
-    ),
-    packet(
-      "landsat",
-      "Landsat",
-      [255, 196, 120, 255],
-      samples({ altitudeM: 705_000, inclinationDeg: 98.2, periodMin: 99, raanDeg: 150, phaseDeg: 50, ...common }),
-    ),
-    packet(
       "nisar",
       "NISAR",
       [186, 230, 160, 255],
-      samples({ altitudeM: 747_000, inclinationDeg: 98.4, periodMin: 100, raanDeg: 260, phaseDeg: 20, ...common }),
+      samples({ altitudeM: 747_000, inclinationDeg: 98.4, periodMin: 100, raanDeg: 260, phaseDeg: 228, ...common }),
     ),
   ];
 }

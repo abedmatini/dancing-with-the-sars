@@ -66,7 +66,7 @@ export default function App() {
   const [showDaily, setShowDaily] = useState(false);
   const [showFire, setShowFire] = useState(false);
   const [showSoil, setShowSoil] = useState(false);
-  const [showSatellites, setShowSatellites] = useState(false);
+  const [showSatellites, setShowSatellites] = useState(true);
   const [showWind, setShowWind] = useState(true);
   const [showRivers, setShowRivers] = useState(true);
   const [showRisk, setShowRisk] = useState(true);
@@ -475,7 +475,7 @@ export default function App() {
         </div>
         {showSatellites ? (
           <p className="pointer-events-auto max-w-xl text-xs text-slate-300">
-            Illustrated orbits for Sentinel-1, Landsat, and NISAR. Not a live tracking feed.
+            Illustrated NISAR orbit, about 747 km up, on a 12-day repeat. Not a live tracking feed.
           </p>
         ) : null}
         {offline ? (
