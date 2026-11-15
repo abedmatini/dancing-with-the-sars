@@ -473,6 +473,10 @@ export default function App() {
             Risk colors
           </LayerButton>
         </div>
+        <p className="pointer-events-auto max-w-sm rounded-2xl border border-white/10 bg-[#0c1522]/85 px-3 py-2 text-xs leading-relaxed text-slate-200 backdrop-blur">
+          <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[#f6c453] align-middle" aria-hidden />
+          Gold pins are NISAR radar pictures of how the ground changed over recent months. Click a pin for a thumbnail grid of that place. Open a picture to enlarge it, then read the weather numbers, trend line, and AI interpretation. Compare seasonal change: drought, flooding, crops, ice, and cities.
+        </p>
         {showSatellites ? (
           <p className="pointer-events-auto max-w-xl text-xs text-slate-300">
             Illustrated NISAR orbit, about 747 km up, on a 12-day repeat. Not a live tracking feed.
