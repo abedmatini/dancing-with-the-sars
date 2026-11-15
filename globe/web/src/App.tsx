@@ -74,6 +74,7 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [flyKey, setFlyKey] = useState(0);
   const [zoomStep, setZoomStep] = useState(0);
+  const [homeStep, setHomeStep] = useState(0);
   const [focus, setFocus] = useState<{ lat: number; lon: number } | null>(null);
   const [tourLabel, setTourLabel] = useState("");
   const [dataNote, setDataNote] = useState(false);
@@ -258,6 +259,7 @@ export default function App() {
         showSoil={showSoil}
         onStopSpin={() => setSpinning(false)}
         zoomStep={zoomStep}
+        homeStep={homeStep}
         onPick={(lat, lon) => {
           tourToken.current += 1;
           setTourLabel("");
@@ -310,6 +312,24 @@ export default function App() {
             className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
           >
             Zoom out
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              tourToken.current += 1;
+              request.current += 1;
+              setTourLabel("");
+              setPlaying(false);
+              setPanelOpen(false);
+              setFocus(null);
+              setGrid(null);
+              setFlow(null);
+              setWind(null);
+              setHomeStep((value) => value + 1);
+            }}
+            className="rounded-full bg-[#0c1522]/90 px-3 py-2 text-sm text-slate-100"
+          >
+            Reset view
           </button>
           {tourLabel ? <span className="text-sm text-cyan-100">Flying to {tourLabel}</span> : null}
         </div>
