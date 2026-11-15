@@ -102,8 +102,7 @@ export default function App() {
       setRadarSpots(spots);
       for (const spot of spots) {
         void fetchShowcaseWeather(
-          spot.lat,
-          spot.lon,
+          spot.id,
           spot.frames.map((frame) => frame.date),
         ).then((days) => {
           if (cancelled) return;
@@ -337,8 +336,7 @@ export default function App() {
             if (!spot) return;
             setReadingBusy(true);
             void fetchShowcaseWeather(
-              spot.lat,
-              spot.lon,
+              spot.id,
               spot.frames.map((frame) => frame.date),
             ).then((days) => {
               const rows = spot.frames.flatMap((frame) => {
