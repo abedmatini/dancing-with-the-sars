@@ -30,6 +30,27 @@ export function weatherCaption(day: DayWeather | undefined): string {
   return `${rain} · ${soil}`;
 }
 
+/** Points for a tiny trend line. Missing days keep their place on the date axis. */
+export function sparklinePoints(
+  values: readonly (number | null)[],
+  width: number,
+  height: number,
+): { index: number; x: number; y: number }[] {
+  const present = values.filter((value): value is number => value != null);
+  if (!present.length || width <= 0 || height <= 0) return [];
+  const min = Math.min(...present);
+  const max = Math.max(...present);
+  const span = max - min || 1;
+  const pad = 1.5;
+  const last = Math.max(values.length - 1, 1);
+  return values.flatMap((value, index) => {
+    if (value == null) return [];
+    const x = values.length === 1 ? width / 2 : pad + (index / last) * (width - pad * 2);
+    const y = pad + (1 - (value - min) / span) * (height - pad * 2);
+    return [{ index, x, y }];
+  });
+}
+
 function trimNumber(value: number, places: number): string {
   const factor = 10 ** places;
   const rounded = Math.round(value * factor) / factor;
