@@ -119,7 +119,19 @@ export async function fetchScene(
   const entry = nearestDemo(demo, lat, lon);
   const approximate =
     Math.abs(entry.scene.lat - lat) > 0.05 || Math.abs(entry.scene.lon - lon) > 0.05;
-  return { scene: withDate(entry.scene, date), offline: true, approximate };
+  const scene = withDate(entry.scene, date);
+  return {
+    scene: {
+      ...scene,
+      soil_available: false,
+      soil_note: "Data unavailable",
+      soil_moisture: [],
+      soil_value: 0,
+      soil_unit: "",
+    },
+    offline: true,
+    approximate,
+  };
 }
 
 export async function fetchGrid(

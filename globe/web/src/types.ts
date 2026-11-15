@@ -52,6 +52,8 @@ export type Scene = {
   soil_moisture: { date: string; value: number; units: string }[];
   soil_value: number;
   soil_unit: string;
+  soil_available?: boolean;
+  soil_note?: string;
   slope: { mean: number; min: number; max: number; units: string };
   risk: { score: number; class: string; ranges: string };
   risk_series: { date: string; score: number; class: string }[];

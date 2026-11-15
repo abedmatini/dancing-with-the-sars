@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { ShowcaseFrame, ShowcaseSpot } from "./showcase";
 import { weatherCaption, type DayWeather } from "./showcaseWeather";
 import { WeatherTrend } from "./WeatherTrend";
@@ -60,6 +61,40 @@ export function ShowcaseRing({
 }) {
   const layout = ringLayout(spot.frames.length);
   const lowest = Math.max(...layout.points.map((point) => point.y), 0);
+  const [playing, setPlaying] = useState(false);
+  const indexRef = useRef(0);
+  const framesRef = useRef(spot.frames);
+  framesRef.current = spot.frames;
+
+  useEffect(() => {
+    setPlaying(false);
+  }, [spot.id]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => {
+      const frames = framesRef.current;
+      if (frames.length === 0) return;
+      const next = (indexRef.current + 1) % frames.length;
+      indexRef.current = next;
+      onEnlarge(frames[next]);
+    }, 2800);
+    return () => window.clearInterval(timer);
+  }, [playing, onEnlarge]);
+
+  function playOrPause() {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    const current = enlarged ? spot.frames.findIndex((frame) => frame.date === enlarged.date) : 0;
+    const index = current >= 0 ? current : 0;
+    indexRef.current = index;
+    const frame = spot.frames[index];
+    if (frame) onEnlarge(frame);
+    setPlaying(true);
+  }
+
   return (
     <>
       {anchor ? (
@@ -92,6 +127,14 @@ export function ShowcaseRing({
             <div className="flex gap-2">
               <button
                 type="button"
+                className="rounded-full bg-white/15 px-3 py-1.5 text-xs text-slate-100"
+                onClick={playOrPause}
+                aria-pressed={playing}
+              >
+                {playing ? "Pause" : "Slideshow"}
+              </button>
+              <button
+                type="button"
                 className="rounded-full bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950 disabled:opacity-60"
                 onClick={onAsk}
                 disabled={readingBusy}
@@ -101,7 +144,10 @@ export function ShowcaseRing({
               <button
                 type="button"
                 className="rounded-full bg-[#0c1522]/90 px-3 py-1.5 text-xs text-slate-100"
-                onClick={onClose}
+                onClick={() => {
+                  setPlaying(false);
+                  onClose();
+                }}
               >
                 Close
               </button>
@@ -118,7 +164,15 @@ export function ShowcaseRing({
       ) : null}
       {enlarged ? (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#071018]/80 p-6" role="dialog" aria-label={enlarged.label}>
-          <button type="button" className="absolute inset-0" aria-label="Close the large picture" onClick={onCloseEnlarge} />
+          <button
+            type="button"
+            className="absolute inset-0"
+            aria-label="Close the large picture"
+            onClick={() => {
+              setPlaying(false);
+              onCloseEnlarge();
+            }}
+          />
           <figure className="relative z-10 max-w-3xl">
             <img src={enlarged.src} alt={`NISAR radar, ${enlarged.label}, ${spot.name}`} className="max-h-[70vh] w-auto rounded-2xl border border-white/20 shadow-2xl" />
             <figcaption className="mx-auto mt-2 max-w-md text-center text-sm text-slate-100">

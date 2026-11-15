@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from drought_monitor.assistant import build_context
+from globe.api.soil import real_soil
 from drought_monitor.data import (
     GROUP_GLOBAL,
     GROUP_LOCAL,
@@ -100,7 +101,7 @@ def scene_payload(site: SiteData, source: str, date: str | None) -> dict:
         "POWER climatology" if source == "earthdata" and not using_mock else "1991–2020 climatology"
     )
     lat, lon = site.center
-    return {
+    payload = {
         "id": site.site_id,
         "name": site.name,
         "description": site.description,
@@ -153,6 +154,9 @@ def scene_payload(site: SiteData, source: str, date: str | None) -> dict:
         "risk_series": risk_series,
         "burned_percent": round(float(site.burn_mask.mean()) * 100, 1),
     }
+    layer = str(payload["layers"].get("soil_moisture", ""))
+    payload.update(real_soil(float(lat), float(lon), layer, payload["soil_moisture"]))
+    return payload
 
 
 def context_for(payload: dict) -> dict:

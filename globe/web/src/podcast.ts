@@ -53,7 +53,13 @@ export function briefingScript(scene: Scene, date: string): string {
   const selected = scene.soil_moisture.find((row) => row.date === date)?.value ?? soil[soil.length - 1] ?? scene.soil_value;
   const risk = scene.risk_series.find((row) => row.date === date) ?? scene.risk;
   const soilShort =
-    selected > first + 0.01 ? "up since the first scene" : selected < first - 0.01 ? "down since the first scene" : "about the same as the first scene";
+    scene.soil_available === false || soil.length === 0
+      ? "unavailable"
+      : selected > first + 0.01
+        ? "up since the first scene"
+        : selected < first - 0.01
+          ? "down since the first scene"
+          : "about the same as the first scene";
   const { opening, farm } = seasonNotes(date, scene.lat);
   const source = scene.using_mock ? "This is the seeded demo" : "This uses the loaded satellite series";
   return (

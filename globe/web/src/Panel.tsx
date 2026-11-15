@@ -196,8 +196,14 @@ export function Panel({
           <Metric label="Rainfall vs normal" value={`${scene.percent_normal.toFixed(0)}%`} detail={scene.rainfall_month} />
           <Metric
             label="Soil moisture"
-            value={soil ? soil.value.toFixed(3) : scene.soil_value.toFixed(3)}
-            detail={scene.soil_unit}
+            value={
+              scene.soil_available === false
+                ? "Data unavailable"
+                : soil
+                  ? soil.value.toFixed(3)
+                  : scene.soil_value.toFixed(3)
+            }
+            detail={scene.soil_available === false ? scene.soil_note || "No real series returned" : scene.soil_unit}
           />
           <Metric label="Runoff class" value={risk.class} detail={`${risk.score.toFixed(0)} / 100`} />
           <Metric label="Burned share" value={`${scene.burned_percent.toFixed(1)}%`} detail="of the grid" />
@@ -237,15 +243,19 @@ export function Panel({
         </div>
         <div className="h-36">
           <p className="mb-1 text-xs text-slate-400">Soil moisture</p>
-          <ResponsiveContainer width="100%" height="85%">
-            <LineChart data={scene.soil_moisture}>
-              <CartesianGrid stroke="#243246" vertical={false} />
-              <XAxis dataKey="date" hide />
-              <YAxis stroke="#93a4b8" width={36} tick={{ fontSize: 10 }} />
-              <Tooltip {...chartTip} />
-              <Line type="monotone" dataKey="value" stroke="#67e8f9" dot={false} strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
+          {scene.soil_available === false || scene.soil_moisture.length === 0 ? (
+            <p className="flex h-[85%] items-center text-sm text-slate-300">Data unavailable</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="85%">
+              <LineChart data={scene.soil_moisture}>
+                <CartesianGrid stroke="#243246" vertical={false} />
+                <XAxis dataKey="date" hide />
+                <YAxis stroke="#93a4b8" width={36} tick={{ fontSize: 10 }} />
+                <Tooltip {...chartTip} />
+                <Line type="monotone" dataKey="value" stroke="#67e8f9" dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
         <div className="h-40">
           <p className="mb-1 text-xs text-slate-400">Rainfall against {scene.climatology_name}</p>

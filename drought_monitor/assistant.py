@@ -172,7 +172,9 @@ def build_context(
 ) -> dict:
     """Compact facts the chat and summary are allowed to use."""
 
-    if soil_value > soil_first + 0.01:
+    if not soil_unit:
+        trend = "unavailable for this box"
+    elif soil_value > soil_first + 0.01:
         trend = "higher than the first scene in the series"
     elif soil_value < soil_first - 0.01:
         trend = "lower than the first scene in the series"
@@ -241,8 +243,12 @@ def context_block(context: dict) -> str:
                 f"{context['climatology_name']}, anomaly {context['anomaly_mm']:+.0f} mm"
             ),
             (
-                f"Soil moisture: {context['soil_value']:.3f} {context['soil_unit']} "
-                f"on the slider date, {context['soil_trend']}"
+                "Soil moisture: data unavailable"
+                if not context["soil_unit"]
+                else (
+                    f"Soil moisture: {context['soil_value']:.3f} {context['soil_unit']} "
+                    f"on the slider date, {context['soil_trend']}"
+                )
             ),
             (
                 f"Runoff risk: {context['risk_class']}, index {context['risk_score']:.0f}/100. "
@@ -285,8 +291,12 @@ def template_summary(context: dict) -> str:
             "with that same monthly baseline."
         ),
         (
-            f"Soil moisture on the selected date is {context['soil_value']:.3f} {context['soil_unit']}, "
-            f"{context['soil_trend']}."
+            "Soil moisture data is unavailable for this box."
+            if not context["soil_unit"]
+            else (
+                f"Soil moisture on the selected date is {context['soil_value']:.3f} {context['soil_unit']}, "
+                f"{context['soil_trend']}."
+            )
         ),
         (
             f"Runoff risk is {context['risk_class']}, with a scene index of "
@@ -315,8 +325,14 @@ def fallback_answer(question: str, context: dict) -> str:
         )
     if any(word in text for word in ("soil", "moisture", "wet")):
         answers.append(
-            f"On {context['slider_date']}, mean soil moisture is {context['soil_value']:.3f} "
-            f"{context['soil_unit']}, {context['soil_trend']}."
+            (
+                "Soil moisture data is unavailable for this box."
+                if not context["soil_unit"]
+                else (
+                    f"On {context['slider_date']}, mean soil moisture is {context['soil_value']:.3f} "
+                    f"{context['soil_unit']}, {context['soil_trend']}."
+                )
+            )
         )
     if any(word in text for word in ("risk", "runoff", "class", "low", "medium", "high", "index")):
         answers.append(

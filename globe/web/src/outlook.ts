@@ -13,6 +13,13 @@ function mean(values: number[]): number {
 
 /** Read the loaded series forward one month. Not a climate model. */
 export function drynessOutlook(scene: Scene): DrynessOutlook {
+  if (scene.soil_available === false || scene.soil_moisture.length === 0) {
+    return {
+      headline: "Soil moisture data is unavailable.",
+      detail: "Rain, slope, and runoff stay on the loaded scene. No stand-in soil series is shown.",
+      note: scene.soil_note || "Data unavailable",
+    };
+  }
   const soil = scene.soil_moisture.map((row) => row.value);
   const recentRainRows = scene.rainfall.slice(-3);
   const recentRain = recentRainRows.length

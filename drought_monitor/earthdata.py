@@ -480,6 +480,35 @@ def _copernicus_slope(center, extent, x, y, transform) -> xr.DataArray:
     )
 
 
+def gwetop_series(lat: float, lon: float) -> list[tuple[str, float]]:
+    """Daily MERRA-2 surface wetness from NASA POWER, sampled every 12 days.
+
+    Raises when the service returns nothing usable. Values are a unitless
+    wetness fraction, not volumetric soil moisture.
+    """
+
+    payload = _get_json(
+        f"{POWER_API}/daily/point",
+        _power_params(
+            "GWETTOP",
+            lat,
+            lon,
+            start="20260601",
+            end="20261114",
+        ),
+    )
+    rows = payload["properties"]["parameter"]["GWETTOP"]
+    valid = [
+        (f"{key[:4]}-{key[4:6]}-{key[6:8]}", float(value))
+        for key, value in rows.items()
+        if key.isdigit() and float(value) > FILL_VALUE
+    ]
+    valid.sort()
+    if len(valid) < 2:
+        raise RuntimeError("NASA POWER returned no surface-wetness days")
+    return valid[::12]
+
+
 def _power_params(parameter: str, lat: float, lon: float, **extra) -> dict[str, str]:
     params = {
         "parameters": parameter,

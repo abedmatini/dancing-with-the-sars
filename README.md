@@ -119,7 +119,7 @@ The same names are listed empty in `.env.example`. Put values in a gitignored `.
 
 `globe/web` is a React + Vite globe (Cesium via Resium). `globe/api` is a FastAPI app that calls the same `drought_monitor` loaders as the Streamlit page. The Streamlit app is unchanged.
 
-Imagery is NASA GIBS MODIS true colour, with optional MODIS thermal-anomaly and SMAP soil-moisture layers, and an OpenStreetMap fallback. Cesium ion is optional. With `VITE_CESIUM_ION_TOKEN` unset, the globe uses the WGS84 ellipsoid and those free layers. `globe/LAYERS.md` lists the on/off buttons.
+Imagery is NASA GIBS MODIS true colour, with optional MODIS thermal-anomaly, SMAP soil-moisture, and NISAR radar layers, and an OpenStreetMap fallback. Cesium ion is optional. With `VITE_CESIUM_ION_TOKEN` unset, the globe uses the WGS84 ellipsoid and those free layers. `globe/LAYERS.md` lists the on/off buttons. The globe opens on the Earthdata source. Soil numbers in the 5 km box come from a saved Open-Meteo pin, live NASA POWER `GWETTOP`, or a NISAR scene when a token can read one. If none of those return data, the soil card says “Data unavailable”. `REFERENCES.md` lists the sources and the journey log.
 
 From the repository root, with the Python dependencies installed:
 

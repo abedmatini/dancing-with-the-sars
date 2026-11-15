@@ -44,7 +44,13 @@ def test_preset_click_and_custom_five_kilometre_box():
     assert body["layers"]["rainfall"].startswith("MOCK")
     assert body["risk"]["ranges"].startswith("Low")
     assert body["dates"]
-    assert len(body["soil_moisture"]) == len(body["dates"])
+    assert "soil_available" in body
+    if body["soil_available"]:
+        assert len(body["soil_moisture"]) >= 2
+        assert body["soil_note"]
+    else:
+        assert body["soil_moisture"] == []
+        assert body["soil_note"] == "Data unavailable"
     assert body["rainfall"][-1]["percent_normal"] > 0
 
     custom = client.get("/site", params={"lat": 1.234, "lon": 36.543, "source": "mock"}).json()
