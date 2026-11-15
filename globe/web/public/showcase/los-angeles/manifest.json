@@ -1,0 +1,40 @@
+{
+  "id": "los-angeles",
+  "name": "Los Angeles",
+  "region": "United States",
+  "lat": 34.1,
+  "lon": -118.3,
+  "story": "City blocks against hills drying into autumn.",
+  "frames": [
+    {
+      "date": "2026-06-22",
+      "label": "22 June 2026",
+      "src": "/showcase/los-angeles/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/los-angeles/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-22",
+      "label": "22 August 2026",
+      "src": "/showcase/los-angeles/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-14",
+      "label": "14 September 2026",
+      "src": "/showcase/los-angeles/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-28",
+      "label": "28 October 2026",
+      "src": "/showcase/los-angeles/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-06",
+      "label": "6 November 2026",
+      "src": "/showcase/los-angeles/2026-11.jpg"
+    }
+  ]
+}

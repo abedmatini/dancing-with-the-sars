@@ -1,0 +1,40 @@
+{
+  "id": "central-valley",
+  "name": "Central Valley",
+  "region": "United States",
+  "lat": 36.7,
+  "lon": -119.8,
+  "story": "Irrigated crops through summer, then bare fields after harvest.",
+  "frames": [
+    {
+      "date": "2026-05-28",
+      "label": "28 May 2026",
+      "src": "/showcase/central-valley/2026-05.jpg"
+    },
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/central-valley/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/central-valley/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-28",
+      "label": "28 August 2026",
+      "src": "/showcase/central-valley/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-06",
+      "label": "6 September 2026",
+      "src": "/showcase/central-valley/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-22",
+      "label": "22 October 2026",
+      "src": "/showcase/central-valley/2026-10.jpg"
+    }
+  ]
+}

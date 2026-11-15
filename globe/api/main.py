@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from drought_monitor.assistant import answer_question, podcast_script, summarize_view
 from globe.api.rivers import downstream
 from globe.api.serialize import context_for, locate, preset_catalog, risk_grid, scene_payload
+from globe.api.showcase import read_showcase
 from globe.api.store import stored_grid, stored_scene
 
 app = FastAPI(title="Dancing with the SARs globe", version="1.0.0")
@@ -38,6 +39,10 @@ class ChatRequest(BaseModel):
     source: Literal["mock", "earthdata", "database"] = "mock"
     date: str | None = None
     question: str = Field(min_length=1, max_length=500)
+
+
+class ShowcaseReadRequest(BaseModel):
+    id: str = Field(min_length=1, max_length=80)
 
 
 def _view(lat: float, lon: float, source: str, date: str | None) -> dict:
@@ -119,6 +124,11 @@ def podcast(
     payload = _view(lat, lon, source, date)
     text, provider, error = podcast_script(context_for(payload))
     return {"text": text, "provider": provider, "error": error}
+
+
+@app.post("/showcase/read")
+def showcase_read(body: ShowcaseReadRequest) -> dict:
+    return read_showcase(body.id)
 
 
 @app.post("/chat")

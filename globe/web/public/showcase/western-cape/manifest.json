@@ -1,0 +1,40 @@
+{
+  "id": "western-cape",
+  "name": "Western Cape",
+  "region": "South Africa",
+  "lat": -33.4,
+  "lon": 19.8,
+  "story": "Winter rain drying toward summer, from the winelands into the Karoo. May 2026 had no public pass here, so the set starts in June.",
+  "frames": [
+    {
+      "date": "2026-06-19",
+      "label": "19 June 2026",
+      "src": "/showcase/western-cape/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-18",
+      "label": "18 July 2026",
+      "src": "/showcase/western-cape/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-10",
+      "label": "10 August 2026",
+      "src": "/showcase/western-cape/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-22",
+      "label": "22 September 2026",
+      "src": "/showcase/western-cape/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-22",
+      "label": "22 October 2026",
+      "src": "/showcase/western-cape/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-02",
+      "label": "2 November 2026",
+      "src": "/showcase/western-cape/2026-11.jpg"
+    }
+  ]
+}

@@ -5,6 +5,8 @@ import {
   Cartographic,
   Color,
   CzmlDataSource,
+  Ellipsoid,
+  EllipsoidalOccluder,
   EllipsoidTerrainProvider,
   ImageMaterialProperty,
   Ion,
@@ -14,6 +16,7 @@ import {
   NearFarScalar,
   PolylineGlowMaterialProperty,
   Rectangle,
+  SceneTransforms,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   Terrain,
@@ -24,6 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Entity, useCesium, Viewer } from "resium";
 import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
+import type { ShowcaseSpot } from "./showcase";
 import type { FlowPath, RiskGrid, SitePin } from "./types";
 import { windStrength, type WindField } from "./wind";
 
@@ -74,7 +78,29 @@ function arrowImage(): HTMLCanvasElement {
   return canvas;
 }
 
+function showcasePinImage(): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+  ctx.clearRect(0, 0, 128, 128);
+  ctx.beginPath();
+  ctx.arc(64, 64, 56, 0, Math.PI * 2);
+  ctx.fillStyle = "#041018";
+  ctx.fill();
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = "#f6c453";
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(64, 64, 22, 0, Math.PI * 2);
+  ctx.fillStyle = "#f6c453";
+  ctx.fill();
+  return canvas;
+}
+
 const pinMarker = pinImage();
+const showcaseMarker = showcasePinImage();
 const arrowMarker = arrowImage();
 
 type FlyTarget = { lat: number; lon: number; key: number };
@@ -206,6 +232,11 @@ function GlobeEffects({
   showSatellites,
   onStopSpin,
   onPick,
+  onShowcase,
+  radarSpot,
+  radarOpen,
+  radarFly,
+  onRadarAnchor,
   zoomStep,
   homeStep,
 }: {
@@ -220,16 +251,27 @@ function GlobeEffects({
   showSatellites: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
+  onShowcase: (id: string) => void;
+  radarSpot: ShowcaseSpot | null;
+  radarOpen: boolean;
+  radarFly: number;
+  onRadarAnchor: (point: { x: number; y: number } | null) => void;
   zoomStep: number;
   homeStep: number;
 }) {
   const { viewer } = useCesium();
   const stopRef = useRef(onStopSpin);
   const pickRef = useRef(onPick);
+  const showcaseRef = useRef(onShowcase);
   const pinsRef = useRef(pins);
+  const radarRef = useRef(radarSpot);
+  const anchorRef = useRef(onRadarAnchor);
   stopRef.current = onStopSpin;
   pickRef.current = onPick;
+  showcaseRef.current = onShowcase;
   pinsRef.current = pins;
+  radarRef.current = radarSpot;
+  anchorRef.current = onRadarAnchor;
 
   useEffect(() => {
     if (!viewer) return;
@@ -262,6 +304,10 @@ function GlobeEffects({
       stop();
       const picked = viewer.scene.pick(click.position);
       const entityId = picked?.id?.id;
+      if (typeof entityId === "string" && entityId.startsWith("showcase:")) {
+        showcaseRef.current(entityId.slice("showcase:".length));
+        return;
+      }
       const pin =
         typeof entityId === "string" ? pinsRef.current.find((site) => site.id === entityId) : undefined;
       if (pin) {
@@ -385,6 +431,47 @@ function GlobeEffects({
     };
   }, [viewer, showSatellites]);
 
+  useEffect(() => {
+    if (!viewer || radarFly === 0 || !radarRef.current) return;
+    const spot = radarRef.current;
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(spot.lon, spot.lat, 2_600_000),
+      orientation: { heading: 0, pitch: CesiumMath.toRadians(-90), roll: 0 },
+      duration: 1.3,
+    });
+  }, [viewer, radarFly]);
+
+  useEffect(() => {
+    if (!viewer) return;
+    const tick = () => {
+      const spot = radarOpen ? radarRef.current : null;
+      if (!spot || viewer.isDestroyed()) {
+        anchorRef.current(null);
+        return;
+      }
+      const cartesian = Cartesian3.fromDegrees(spot.lon, spot.lat, 200);
+      const occluder = new EllipsoidalOccluder(Ellipsoid.WGS84, viewer.camera.positionWC);
+      if (!occluder.isPointVisible(cartesian)) {
+        anchorRef.current(null);
+        return;
+      }
+      const canvas = viewer.scene.canvas;
+      const pos = SceneTransforms.worldToWindowCoordinates(viewer.scene, cartesian);
+      if (!pos) {
+        anchorRef.current(null);
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      anchorRef.current({ x: rect.left + pos.x, y: rect.top + pos.y });
+    };
+    const remove = viewer.scene.postRender.addEventListener(tick);
+    return () => {
+      remove();
+      anchorRef.current(null);
+    };
+  }, [viewer, radarOpen]);
+
   return null;
 }
 
@@ -403,6 +490,12 @@ export function Earth({
   showRisk,
   onStopSpin,
   onPick,
+  onShowcase,
+  radarSpots,
+  radarSpot,
+  radarOpen,
+  radarFly,
+  onRadarAnchor,
   zoomStep,
   homeStep,
 }: {
@@ -420,6 +513,12 @@ export function Earth({
   showRisk: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
+  onShowcase: (id: string) => void;
+  radarSpots: ShowcaseSpot[];
+  radarSpot: ShowcaseSpot | null;
+  radarOpen: boolean;
+  radarFly: number;
+  onRadarAnchor: (point: { x: number; y: number } | null) => void;
   zoomStep: number;
   homeStep: number;
 }) {
@@ -466,9 +565,41 @@ export function Earth({
         showSatellites={showSatellites}
         onStopSpin={onStopSpin}
         onPick={onPick}
+        onShowcase={onShowcase}
+        radarSpot={radarSpot}
+        radarOpen={radarOpen}
+        radarFly={radarFly}
+        onRadarAnchor={onRadarAnchor}
         zoomStep={zoomStep}
         homeStep={homeStep}
       />
+      {radarSpots.map((spot) => (
+        <Entity
+          key={spot.id}
+          id={`showcase:${spot.id}`}
+          name={spot.name}
+          position={Cartesian3.fromDegrees(spot.lon, spot.lat, 80)}
+          billboard={{
+            image: showcaseMarker,
+            width: 64,
+            height: 64,
+            verticalOrigin: VerticalOrigin.CENTER,
+            scaleByDistance: pinScale,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          }}
+          label={{
+            text: spot.name,
+            font: "600 15px sans-serif",
+            fillColor: Color.fromCssColorString("#f6c453"),
+            outlineColor: Color.fromCssColorString("#041018"),
+            outlineWidth: 3,
+            style: LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cartesian2(0, 36),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            scaleByDistance: new NearFarScalar(2e5, 1, 1.2e7, 0.7),
+          }}
+        />
+      ))}
       {pins.map((site) => (
         <Entity
           key={site.id}
