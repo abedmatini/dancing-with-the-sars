@@ -1,0 +1,40 @@
+{
+  "id": "rotterdam",
+  "name": "Rotterdam",
+  "region": "Netherlands",
+  "lat": 51.9,
+  "lon": 4.5,
+  "story": "A hard city, a port, and held water side by side.",
+  "frames": [
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/rotterdam/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/rotterdam/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-22",
+      "label": "22 August 2026",
+      "src": "/showcase/rotterdam/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-22",
+      "label": "22 September 2026",
+      "src": "/showcase/rotterdam/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-14",
+      "label": "14 October 2026",
+      "src": "/showcase/rotterdam/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-06",
+      "label": "6 November 2026",
+      "src": "/showcase/rotterdam/2026-11.jpg"
+    }
+  ]
+}

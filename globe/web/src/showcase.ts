@@ -14,8 +14,9 @@ export type ShowcaseSpot = {
   frames: ShowcaseFrame[];
 };
 
-export async function loadShowcase(): Promise<ShowcaseSpot | null> {
-  const response = await fetch("/showcase/western-cape/manifest.json");
-  if (!response.ok) return null;
-  return (await response.json()) as ShowcaseSpot;
+export async function loadShowcase(): Promise<ShowcaseSpot[]> {
+  const response = await fetch("/showcase/index.json");
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { spots: ShowcaseSpot[] };
+  return payload.spots.filter((spot) => spot.frames.length > 0);
 }

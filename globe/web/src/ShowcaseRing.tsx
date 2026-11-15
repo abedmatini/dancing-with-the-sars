@@ -50,7 +50,7 @@ export function ShowcaseRing({
                 onClick={() => onEnlarge(frame)}
                 aria-label={`Open the ${frame.label} radar picture`}
               >
-                <img src={frame.src} alt="" className="h-[78px] w-full object-cover" />
+                <img src={frame.src} alt="" className="h-[78px] w-full bg-[#071018] object-contain" />
                 <span className="block truncate px-1.5 py-1 text-[10px] text-slate-100">{frame.label}</span>
               </button>
             );

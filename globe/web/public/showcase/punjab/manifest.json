@@ -1,0 +1,40 @@
+{
+  "id": "punjab",
+  "name": "Punjab",
+  "region": "India",
+  "lat": 30.9,
+  "lon": 75.9,
+  "story": "Rice cut in autumn and wheat sown behind it.",
+  "frames": [
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/punjab/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-14",
+      "label": "14 July 2026",
+      "src": "/showcase/punjab/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-14",
+      "label": "14 August 2026",
+      "src": "/showcase/punjab/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-22",
+      "label": "22 September 2026",
+      "src": "/showcase/punjab/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-28",
+      "label": "28 October 2026",
+      "src": "/showcase/punjab/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-06",
+      "label": "6 November 2026",
+      "src": "/showcase/punjab/2026-11.jpg"
+    }
+  ]
+}

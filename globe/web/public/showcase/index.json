@@ -1,0 +1,389 @@
+{
+  "spots": [
+    {
+      "id": "western-cape",
+      "name": "Western Cape",
+      "region": "South Africa",
+      "lat": -33.4,
+      "lon": 19.8,
+      "story": "Winter rain drying toward summer, from the winelands into the Karoo. May 2026 had no public pass here, so the set starts in June.",
+      "frames": [
+        {
+          "date": "2026-06-19",
+          "label": "19 June 2026",
+          "src": "/showcase/western-cape/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-18",
+          "label": "18 July 2026",
+          "src": "/showcase/western-cape/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-10",
+          "label": "10 August 2026",
+          "src": "/showcase/western-cape/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/western-cape/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-22",
+          "label": "22 October 2026",
+          "src": "/showcase/western-cape/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-02",
+          "label": "2 November 2026",
+          "src": "/showcase/western-cape/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "okavango",
+      "name": "Okavango Delta",
+      "region": "Botswana",
+      "lat": -19.3,
+      "lon": 22.8,
+      "story": "A flood that arrives in the dry season and then drains.",
+      "frames": [
+        {
+          "date": "2026-06-22",
+          "label": "22 June 2026",
+          "src": "/showcase/okavango/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-06",
+          "label": "6 July 2026",
+          "src": "/showcase/okavango/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-28",
+          "label": "28 August 2026",
+          "src": "/showcase/okavango/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-28",
+          "label": "28 September 2026",
+          "src": "/showcase/okavango/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-22",
+          "label": "22 October 2026",
+          "src": "/showcase/okavango/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/okavango/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "luxor",
+      "name": "Luxor",
+      "region": "Egypt",
+      "lat": 25.7,
+      "lon": 32.6,
+      "story": "A thin irrigated river against empty desert.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/luxor/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/luxor/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-22",
+          "label": "22 August 2026",
+          "src": "/showcase/luxor/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-06",
+          "label": "6 September 2026",
+          "src": "/showcase/luxor/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-28",
+          "label": "28 October 2026",
+          "src": "/showcase/luxor/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "central-valley",
+      "name": "Central Valley",
+      "region": "United States",
+      "lat": 36.7,
+      "lon": -119.8,
+      "story": "Irrigated crops through summer, then bare fields after harvest.",
+      "frames": [
+        {
+          "date": "2026-05-28",
+          "label": "28 May 2026",
+          "src": "/showcase/central-valley/2026-05.jpg"
+        },
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/central-valley/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/central-valley/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-28",
+          "label": "28 August 2026",
+          "src": "/showcase/central-valley/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-06",
+          "label": "6 September 2026",
+          "src": "/showcase/central-valley/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-22",
+          "label": "22 October 2026",
+          "src": "/showcase/central-valley/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "sylhet",
+      "name": "Sylhet haors",
+      "region": "Bangladesh",
+      "lat": 24.9,
+      "lon": 91.4,
+      "story": "Monsoon basins filling, then emptying.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/sylhet/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/sylhet/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-14",
+          "label": "14 August 2026",
+          "src": "/showcase/sylhet/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/sylhet/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-28",
+          "label": "28 October 2026",
+          "src": "/showcase/sylhet/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/sylhet/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "manaus",
+      "name": "Manaus",
+      "region": "Brazil",
+      "lat": -3.1,
+      "lon": -59.9,
+      "story": "Forest standing in high water, then the flood dropping away.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/manaus/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/manaus/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-22",
+          "label": "22 August 2026",
+          "src": "/showcase/manaus/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/manaus/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-14",
+          "label": "14 October 2026",
+          "src": "/showcase/manaus/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ilulissat",
+      "name": "Ilulissat Glacier",
+      "region": "Greenland",
+      "lat": 69.2,
+      "lon": -49.7,
+      "story": "Summer melt on ice, then the freeze returning.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/ilulissat/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/ilulissat/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-22",
+          "label": "22 August 2026",
+          "src": "/showcase/ilulissat/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/ilulissat/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-28",
+          "label": "28 October 2026",
+          "src": "/showcase/ilulissat/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "rotterdam",
+      "name": "Rotterdam",
+      "region": "Netherlands",
+      "lat": 51.9,
+      "lon": 4.5,
+      "story": "A hard city, a port, and held water side by side.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/rotterdam/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/rotterdam/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-22",
+          "label": "22 August 2026",
+          "src": "/showcase/rotterdam/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/rotterdam/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-14",
+          "label": "14 October 2026",
+          "src": "/showcase/rotterdam/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/rotterdam/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "punjab",
+      "name": "Punjab",
+      "region": "India",
+      "lat": 30.9,
+      "lon": 75.9,
+      "story": "Rice cut in autumn and wheat sown behind it.",
+      "frames": [
+        {
+          "date": "2026-06-28",
+          "label": "28 June 2026",
+          "src": "/showcase/punjab/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-14",
+          "label": "14 July 2026",
+          "src": "/showcase/punjab/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-14",
+          "label": "14 August 2026",
+          "src": "/showcase/punjab/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "22 September 2026",
+          "src": "/showcase/punjab/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-28",
+          "label": "28 October 2026",
+          "src": "/showcase/punjab/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/punjab/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "los-angeles",
+      "name": "Los Angeles",
+      "region": "United States",
+      "lat": 34.1,
+      "lon": -118.3,
+      "story": "City blocks against hills drying into autumn.",
+      "frames": [
+        {
+          "date": "2026-06-22",
+          "label": "22 June 2026",
+          "src": "/showcase/los-angeles/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-22",
+          "label": "22 July 2026",
+          "src": "/showcase/los-angeles/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-22",
+          "label": "22 August 2026",
+          "src": "/showcase/los-angeles/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-14",
+          "label": "14 September 2026",
+          "src": "/showcase/los-angeles/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-28",
+          "label": "28 October 2026",
+          "src": "/showcase/los-angeles/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/los-angeles/2026-11.jpg"
+        }
+      ]
+    }
+  ]
+}
