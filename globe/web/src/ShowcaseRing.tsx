@@ -1,5 +1,6 @@
 import type { ShowcaseFrame, ShowcaseSpot } from "./showcase";
 import { weatherCaption, type DayWeather } from "./showcaseWeather";
+import { WeatherTrend } from "./WeatherTrend";
 
 const RADIUS = 138;
 
@@ -83,9 +84,10 @@ export function ShowcaseRing({
               >
                 Close
               </button>
-                </div>
-                <p className="text-[10px] text-slate-400">Rain and soil moisture from Open-Meteo.</p>
-                {reading ? (
+            </div>
+            <p className="text-[10px] text-slate-400">Rain and soil moisture from Open-Meteo.</p>
+            <WeatherTrend frames={spot.frames} weather={weather} activeDate={enlarged?.date} />
+            {reading ? (
               <p className="max-h-40 w-72 overflow-auto rounded-2xl border border-white/10 bg-[#0c1522]/95 p-3 text-left text-xs leading-relaxed text-slate-100 shadow-xl">
                 {reading}
               </p>
@@ -103,6 +105,9 @@ export function ShowcaseRing({
                 {spot.name} · {enlarged.label}
               </div>
               <div>{weatherCaption(weather[enlarged.date])}</div>
+              <div className="mt-2 flex justify-center">
+                <WeatherTrend frames={spot.frames} weather={weather} activeDate={enlarged.date} />
+              </div>
               <div className="text-xs text-slate-300">
                 NISAR radar picture, not a photograph. Rain and soil moisture from Open-Meteo.
               </div>
