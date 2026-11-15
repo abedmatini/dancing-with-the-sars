@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchCatalog, fetchFlow, fetchGrid, fetchScene } from "./api";
+import { fetchCatalog, fetchFlow, fetchGrid, fetchScene, readShowcase } from "./api";
 import { DataNote } from "./DataNote";
 import { MapKey } from "./MapKey";
 import { Earth } from "./Earth";
 import { Panel } from "./Panel";
+import { ShowcaseRing } from "./ShowcaseRing";
+import { loadShowcase, type ShowcaseFrame, type ShowcaseSpot } from "./showcase";
 import type { Catalog, FlowPath, RiskGrid, Scene, SourceMode } from "./types";
 import { fetchWind, type WindField } from "./wind";
 
@@ -75,6 +77,13 @@ export default function App() {
   const [flyKey, setFlyKey] = useState(0);
   const [zoomStep, setZoomStep] = useState(0);
   const [homeStep, setHomeStep] = useState(0);
+  const [radarSpot, setRadarSpot] = useState<ShowcaseSpot | null>(null);
+  const [radarOpen, setRadarOpen] = useState(false);
+  const [radarFly, setRadarFly] = useState(0);
+  const [radarAnchor, setRadarAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [enlarged, setEnlarged] = useState<ShowcaseFrame | null>(null);
+  const [reading, setReading] = useState("");
+  const [readingBusy, setReadingBusy] = useState(false);
   const [focus, setFocus] = useState<{ lat: number; lon: number } | null>(null);
   const [tourLabel, setTourLabel] = useState("");
   const [dataNote, setDataNote] = useState(false);
@@ -82,6 +91,10 @@ export default function App() {
   const tourToken = useRef(0);
 
   const pins = useMemo(() => catalog?.groups.flatMap((group) => group.sites) ?? [], [catalog]);
+
+  useEffect(() => {
+    void loadShowcase().then(setRadarSpot);
+  }, []);
 
   useEffect(() => {
     try {
@@ -260,12 +273,50 @@ export default function App() {
         onStopSpin={() => setSpinning(false)}
         zoomStep={zoomStep}
         homeStep={homeStep}
+        onShowcase={() => {
+          setSpinning(false);
+          setEnlarged(null);
+          setRadarOpen((open) => {
+            if (open) return false;
+            setRadarFly((value) => value + 1);
+            return true;
+          });
+        }}
+        radarSpot={radarSpot}
+        radarOpen={radarOpen}
+        radarFly={radarFly}
+        onRadarAnchor={setRadarAnchor}
         onPick={(lat, lon) => {
           tourToken.current += 1;
           setTourLabel("");
+          setRadarOpen(false);
+          setEnlarged(null);
           void openAt(lat, lon, null);
         }}
       />
+      {radarSpot ? (
+        <ShowcaseRing
+          spot={radarSpot}
+          anchor={radarOpen ? radarAnchor : null}
+          enlarged={enlarged}
+          reading={reading}
+          readingBusy={readingBusy}
+          onEnlarge={setEnlarged}
+          onCloseEnlarge={() => setEnlarged(null)}
+          onClose={() => {
+            setRadarOpen(false);
+            setEnlarged(null);
+          }}
+          onAsk={() => {
+            if (!radarSpot) return;
+            setReadingBusy(true);
+            void readShowcase(radarSpot.id).then((result) => {
+              setReading(result.error ? result.error : result.answer);
+              setReadingBusy(false);
+            });
+          }}
+        />
+      ) : null}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-3 p-3 sm:p-4">
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <div className="rounded-2xl border border-white/10 bg-[#0c1522]/80 px-3 py-2 backdrop-blur">

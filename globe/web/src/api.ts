@@ -270,6 +270,32 @@ export async function fetchPodcast(
   return (await response.json()) as { text: string; error: string | null };
 }
 
+export async function readShowcase(
+  id: string,
+): Promise<{ answer: string; provider: string; error: string | null }> {
+  try {
+    const response = await fetch(`${API_BASE}/showcase/read`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!response.ok) {
+      return {
+        answer: "The radar pictures could not be sent.",
+        provider: "none",
+        error: `HTTP ${response.status}`,
+      };
+    }
+    return (await response.json()) as { answer: string; provider: string; error: string | null };
+  } catch {
+    return {
+      answer: "The globe API is not running, so Claude was not asked to read these pictures.",
+      provider: "none",
+      error: "unreachable",
+    };
+  }
+}
+
 export async function fetchChat(
   lat: number,
   lon: number,
