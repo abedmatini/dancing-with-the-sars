@@ -39,24 +39,6 @@ const ellipsoidTerrain = new EllipsoidTerrainProvider();
 const pinScale = new NearFarScalar(2e5, 1.2, 2.2e7, 0.7);
 const BOX_SCALE = 1.65;
 
-function pinImage(): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = 96;
-  canvas.height = 96;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-  ctx.clearRect(0, 0, 96, 96);
-  ctx.beginPath();
-  ctx.arc(48, 48, 40, 0, Math.PI * 2);
-  ctx.fillStyle = "#041018";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(48, 48, 26, 0, Math.PI * 2);
-  ctx.fillStyle = "#7ee7ff";
-  ctx.fill();
-  return canvas;
-}
-
 function arrowImage(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = 48;
@@ -99,7 +81,6 @@ function showcasePinImage(): HTMLCanvasElement {
   return canvas;
 }
 
-const pinMarker = pinImage();
 const showcaseMarker = showcasePinImage();
 const arrowMarker = arrowImage();
 
@@ -432,6 +413,22 @@ function GlobeEffects({
   }, [viewer, showSatellites]);
 
   useEffect(() => {
+    if (!viewer) return;
+    const occluder = new EllipsoidalOccluder(Ellipsoid.WGS84, Cartesian3.ZERO);
+    const hideFarSide = () => {
+      if (viewer.isDestroyed()) return;
+      occluder.cameraPosition = viewer.camera.positionWC;
+      for (const entity of viewer.entities.values) {
+        if (typeof entity.id !== "string" || !entity.id.startsWith("showcase:")) continue;
+        const position = entity.position?.getValue(viewer.clock.currentTime);
+        entity.show = Boolean(position && occluder.isPointVisible(position));
+      }
+    };
+    const remove = viewer.scene.preRender.addEventListener(hideFarSide);
+    return () => remove();
+  }, [viewer]);
+
+  useEffect(() => {
     if (!viewer || radarFly === 0 || !radarRef.current) return;
     const spot = radarRef.current;
     viewer.camera.cancelFlight();
@@ -597,22 +594,6 @@ export function Earth({
             pixelOffset: new Cartesian2(0, 36),
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             scaleByDistance: new NearFarScalar(2e5, 1, 1.2e7, 0.7),
-          }}
-        />
-      ))}
-      {pins.map((site) => (
-        <Entity
-          key={site.id}
-          id={site.id}
-          name={site.name}
-          position={Cartesian3.fromDegrees(site.lon, site.lat, 80)}
-          billboard={{
-            image: pinMarker,
-            width: 48,
-            height: 48,
-            verticalOrigin: VerticalOrigin.CENTER,
-            scaleByDistance: pinScale,
-            disableDepthTestDistance: 0,
           }}
         />
       ))}

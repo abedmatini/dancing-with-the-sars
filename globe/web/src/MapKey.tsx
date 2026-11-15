@@ -35,7 +35,7 @@ export function MapKey({ wind }: { wind: WindField | null }) {
           <span>Rivers: the blue line is where rain from this spot runs downstream.</span>
         </li>
       </ul>
-      <p className="mt-2 text-slate-400">Click a pin, or anywhere on the Earth, to open a 5 km study box.</p>
+      <p className="mt-2 text-slate-400">Click a gold radar pin for its pictures, or anywhere on the Earth to open a 5 km study box.</p>
     </aside>
   );
 }
