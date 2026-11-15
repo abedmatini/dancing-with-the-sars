@@ -5,6 +5,17 @@ export type DayWeather = {
   soilMoisture: number | null;
 };
 
+type StoredDay = {
+  date?: string;
+  rain_mm?: unknown;
+  temperature_c?: unknown;
+  soil_moisture?: unknown;
+};
+
+type StoredFile = {
+  spots?: { id?: string; days?: StoredDay[] }[];
+};
+
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function finite(value: unknown): number | null {
@@ -25,61 +36,51 @@ function trimNumber(value: number, places: number): string {
   return rounded.toFixed(places).replace(/\.?0+$/, "");
 }
 
-export function parseArchiveDays(payload: unknown, wanted: ReadonlySet<string>): Record<string, DayWeather> {
-  const daily = (payload as { daily?: Record<string, unknown> } | null)?.daily;
-  if (!daily) return {};
-  const time = Array.isArray(daily.time) ? daily.time : [];
-  const rain = Array.isArray(daily.precipitation_sum) ? daily.precipitation_sum : [];
-  const temperature = Array.isArray(daily.temperature_2m_mean) ? daily.temperature_2m_mean : [];
-  const soil = Array.isArray(daily.soil_moisture_0_to_7cm_mean) ? daily.soil_moisture_0_to_7cm_mean : [];
-  const days: Record<string, DayWeather> = {};
-  time.forEach((value, index) => {
-    const date = typeof value === "string" ? value : "";
-    if (!wanted.has(date)) return;
-    days[date] = {
-      date,
-      rainMm: finite(rain[index]),
-      temperatureC: finite(temperature[index]),
-      soilMoisture: finite(soil[index]),
-    };
-  });
-  return days;
+export function daysFromStored(payload: unknown): Record<string, Record<string, DayWeather>> {
+  const spots = (payload as StoredFile | null)?.spots;
+  const bySpot: Record<string, Record<string, DayWeather>> = {};
+  if (!Array.isArray(spots)) return bySpot;
+  for (const spot of spots) {
+    const id = typeof spot?.id === "string" ? spot.id : "";
+    if (!id) continue;
+    const days: Record<string, DayWeather> = {};
+    for (const day of spot.days ?? []) {
+      const date = typeof day?.date === "string" ? day.date : "";
+      if (!DATE.test(date)) continue;
+      days[date] = {
+        date,
+        rainMm: finite(day.rain_mm),
+        temperatureC: finite(day.temperature_c),
+        soilMoisture: finite(day.soil_moisture),
+      };
+    }
+    bySpot[id] = days;
+  }
+  return bySpot;
 }
 
-const cache = new Map<string, Promise<Record<string, DayWeather>>>();
+let stored: Promise<Record<string, Record<string, DayWeather>>> | null = null;
 
-/** Open-Meteo daily archive for one pin. No API key. Same host as the wind arrows. */
-export function fetchShowcaseWeather(
-  lat: number,
-  lon: number,
+function loadStored(): Promise<Record<string, Record<string, DayWeather>>> {
+  stored ??= fetch("/showcase/weather.json")
+    .then((response) => (response.ok ? response.json() : {}))
+    .then((payload) => daysFromStored(payload))
+    .catch(() => ({}));
+  return stored;
+}
+
+/** Stored Open-Meteo readings for one pin. The demo does not call the weather API. */
+export async function fetchShowcaseWeather(
+  spotId: string,
   dates: string[],
 ): Promise<Record<string, DayWeather>> {
-  const wanted = dates.filter((date) => DATE.test(date));
-  if (!wanted.length || !Number.isFinite(lat) || !Number.isFinite(lon)) return Promise.resolve({});
-  const start = [...wanted].sort()[0];
-  const end = [...wanted].sort().at(-1) ?? start;
-  const key = `${lat.toFixed(4)},${lon.toFixed(4)},${start},${end}`;
-  const cached = cache.get(key);
-  if (cached) return cached;
-  const job = loadArchive(lat, lon, start, end, new Set(wanted)).catch(() => ({}));
-  cache.set(key, job);
-  return job;
-}
-
-async function loadArchive(
-  lat: number,
-  lon: number,
-  start: string,
-  end: string,
-  wanted: ReadonlySet<string>,
-): Promise<Record<string, DayWeather>> {
-  const url =
-    "https://archive-api.open-meteo.com/v1/archive" +
-    `?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
-    `&start_date=${start}&end_date=${end}` +
-    "&daily=precipitation_sum,temperature_2m_mean,soil_moisture_0_to_7cm_mean" +
-    "&timezone=auto";
-  const response = await fetch(url);
-  if (!response.ok) return {};
-  return parseArchiveDays(await response.json(), wanted);
+  const table = await loadStored();
+  const days = table[spotId] ?? {};
+  const wanted = new Set(dates.filter((date) => DATE.test(date)));
+  const picked: Record<string, DayWeather> = {};
+  for (const date of wanted) {
+    const day = days[date];
+    if (day) picked[date] = day;
+  }
+  return picked;
 }

@@ -34,6 +34,23 @@ def test_ten_spots_stay_small():
     assert all(path.stat().st_size < 80_000 for path in files)
 
 
+def test_stored_weather_covers_every_radar_date():
+    index = json.loads((ROOT.parent / "index.json").read_text())
+    weather = json.loads((ROOT.parent / "weather.json").read_text())
+    stored = {spot["id"]: {day["date"]: day for day in spot["days"]} for spot in weather["spots"]}
+    assert weather["credit"] == "Open-Meteo"
+    assert [spot["id"] for spot in weather["spots"]] == [spot["id"] for spot in index["spots"]]
+    count = 0
+    for spot in index["spots"]:
+        for frame in spot["frames"]:
+            day = stored[spot["id"]][frame["date"]]
+            assert isinstance(day["rain_mm"], (int, float))
+            assert isinstance(day["temperature_c"], (int, float))
+            assert isinstance(day["soil_moisture"], (int, float))
+            count += 1
+    assert count == 57
+
+
 def test_western_cape_pictures_are_few_and_small():
     files = sorted(ROOT.glob("*.jpg"))
     assert [path.name for path in files] == [
