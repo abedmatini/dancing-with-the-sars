@@ -27,7 +27,7 @@ def _bounded(value: object, low: float, high: float) -> float | None:
 def weather_note(days: list[dict] | None) -> str:
     """Plain lines from Open-Meteo. Values outside a physical range are left out."""
     lines: list[str] = []
-    for day in (days or [])[:12]:
+    for day in (days or [])[:16]:
         if not isinstance(day, dict):
             continue
         date = str(day.get("date") or "")

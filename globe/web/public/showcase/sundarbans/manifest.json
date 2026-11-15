@@ -1,0 +1,40 @@
+{
+  "id": "sundarbans",
+  "name": "Sundarbans",
+  "region": "Bangladesh",
+  "lat": 22.0,
+  "lon": 89.2,
+  "story": "Tidal mangrove creeks, unlike the inland haors.",
+  "frames": [
+    {
+      "date": "2026-06-20",
+      "label": "20 June 2026",
+      "src": "/showcase/sundarbans/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-19",
+      "label": "19 July 2026",
+      "src": "/showcase/sundarbans/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-14",
+      "label": "14 August 2026",
+      "src": "/showcase/sundarbans/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-17",
+      "label": "17 September 2026",
+      "src": "/showcase/sundarbans/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-13",
+      "label": "13 October 2026",
+      "src": "/showcase/sundarbans/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-06",
+      "label": "6 November 2026",
+      "src": "/showcase/sundarbans/2026-11.jpg"
+    }
+  ]
+}

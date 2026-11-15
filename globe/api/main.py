@@ -49,7 +49,7 @@ class ShowcaseWeatherDay(BaseModel):
 
 class ShowcaseReadRequest(BaseModel):
     id: str = Field(min_length=1, max_length=80)
-    weather: list[ShowcaseWeatherDay] = Field(default_factory=list, max_length=12)
+    weather: list[ShowcaseWeatherDay] = Field(default_factory=list, max_length=16)
 
 
 def _view(lat: float, lon: float, source: str, date: str | None) -> dict:

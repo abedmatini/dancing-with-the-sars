@@ -1,0 +1,40 @@
+{
+  "id": "lena-delta",
+  "name": "Lena Delta",
+  "region": "Russia",
+  "lat": 72.4,
+  "lon": 126.6,
+  "story": "An arctic river delta as winter ice gives way to the summer floodplain. November 2025 through January 2026 are in the catalog, but not in the public daily pictures, so this set runs June through November 2026.",
+  "frames": [
+    {
+      "date": "2026-06-17",
+      "label": "17 June 2026",
+      "src": "/showcase/lena-delta/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-15",
+      "label": "15 July 2026",
+      "src": "/showcase/lena-delta/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-15",
+      "label": "15 August 2026",
+      "src": "/showcase/lena-delta/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-14",
+      "label": "14 September 2026",
+      "src": "/showcase/lena-delta/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-15",
+      "label": "15 October 2026",
+      "src": "/showcase/lena-delta/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-01",
+      "label": "1 November 2026",
+      "src": "/showcase/lena-delta/2026-11.jpg"
+    }
+  ]
+}

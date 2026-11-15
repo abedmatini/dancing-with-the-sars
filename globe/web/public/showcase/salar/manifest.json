@@ -1,0 +1,75 @@
+{
+  "id": "salar",
+  "name": "Salar de Atacama",
+  "region": "Chile",
+  "lat": -23.5,
+  "lon": -68.3,
+  "story": "Bright salt crust against dark brine ponds in the Atacama.",
+  "frames": [
+    {
+      "date": "2025-11-16",
+      "label": "16 November 2025",
+      "src": "/showcase/salar/2025-11.jpg"
+    },
+    {
+      "date": "2025-12-15",
+      "label": "15 December 2025",
+      "src": "/showcase/salar/2025-12.jpg"
+    },
+    {
+      "date": "2026-01-15",
+      "label": "15 January 2026",
+      "src": "/showcase/salar/2026-01.jpg"
+    },
+    {
+      "date": "2026-02-13",
+      "label": "13 February 2026",
+      "src": "/showcase/salar/2026-02.jpg"
+    },
+    {
+      "date": "2026-03-16",
+      "label": "16 March 2026",
+      "src": "/showcase/salar/2026-03.jpg"
+    },
+    {
+      "date": "2026-04-14",
+      "label": "14 April 2026",
+      "src": "/showcase/salar/2026-04.jpg"
+    },
+    {
+      "date": "2026-05-15",
+      "label": "15 May 2026",
+      "src": "/showcase/salar/2026-05.jpg"
+    },
+    {
+      "date": "2026-06-13",
+      "label": "13 June 2026",
+      "src": "/showcase/salar/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-14",
+      "label": "14 July 2026",
+      "src": "/showcase/salar/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-16",
+      "label": "16 August 2026",
+      "src": "/showcase/salar/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-14",
+      "label": "14 September 2026",
+      "src": "/showcase/salar/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-15",
+      "label": "15 October 2026",
+      "src": "/showcase/salar/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "4 November 2026",
+      "src": "/showcase/salar/2026-11.jpg"
+    }
+  ]
+}

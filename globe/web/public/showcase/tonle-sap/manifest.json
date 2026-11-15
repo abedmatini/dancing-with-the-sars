@@ -1,0 +1,40 @@
+{
+  "id": "tonle-sap",
+  "name": "Tonle Sap",
+  "region": "Cambodia",
+  "lat": 12.9,
+  "lon": 104.1,
+  "story": "The lake fills with the monsoon and then starts to fall.",
+  "frames": [
+    {
+      "date": "2026-06-19",
+      "label": "19 June 2026",
+      "src": "/showcase/tonle-sap/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-13",
+      "label": "13 July 2026",
+      "src": "/showcase/tonle-sap/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-18",
+      "label": "18 August 2026",
+      "src": "/showcase/tonle-sap/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-16",
+      "label": "16 September 2026",
+      "src": "/showcase/tonle-sap/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-17",
+      "label": "17 October 2026",
+      "src": "/showcase/tonle-sap/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-03",
+      "label": "3 November 2026",
+      "src": "/showcase/tonle-sap/2026-11.jpg"
+    }
+  ]
+}

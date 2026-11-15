@@ -1,0 +1,35 @@
+{
+  "id": "riau",
+  "name": "Riau",
+  "region": "Indonesia",
+  "lat": 0.6,
+  "lon": 101.9,
+  "story": "Peat swamp and plantation blocks, unlike a closed rainforest river.",
+  "frames": [
+    {
+      "date": "2026-06-21",
+      "label": "21 June 2026",
+      "src": "/showcase/riau/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-15",
+      "label": "15 July 2026",
+      "src": "/showcase/riau/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-11",
+      "label": "11 August 2026",
+      "src": "/showcase/riau/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-16",
+      "label": "16 September 2026",
+      "src": "/showcase/riau/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-19",
+      "label": "19 October 2026",
+      "src": "/showcase/riau/2026-10.jpg"
+    }
+  ]
+}

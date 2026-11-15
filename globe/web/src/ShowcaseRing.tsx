@@ -13,6 +13,26 @@ const SLOTS = [
   { x: -0.72, y: 0.72 },
 ];
 
+function ringLayout(count: number): { thumb: number; points: { x: number; y: number }[] } {
+  if (count <= SLOTS.length) {
+    return {
+      thumb: 104,
+      points: SLOTS.slice(0, count).map((slot) => {
+        const length = Math.hypot(slot.x, slot.y) || 1;
+        return { x: (slot.x / length) * RADIUS, y: (slot.y / length) * RADIUS };
+      }),
+    };
+  }
+  const radius = Math.max(220, Math.round((count * 88) / (2 * Math.PI)));
+  return {
+    thumb: 78,
+    points: Array.from({ length: count }, (_, index) => {
+      const angle = -Math.PI / 2 + (index / count) * Math.PI * 2;
+      return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+    }),
+  };
+}
+
 export function ShowcaseRing({
   spot,
   anchor,
@@ -38,25 +58,26 @@ export function ShowcaseRing({
   onAsk: () => void;
   onClose: () => void;
 }) {
+  const layout = ringLayout(spot.frames.length);
+  const lowest = Math.max(...layout.points.map((point) => point.y), 0);
   return (
     <>
       {anchor ? (
         <div className="pointer-events-none absolute inset-0 z-20">
-          {spot.frames.slice(0, SLOTS.length).map((frame, index) => {
-            const slot = SLOTS[index];
-            const length = Math.hypot(slot.x, slot.y) || 1;
-            const left = anchor.x + (slot.x / length) * RADIUS;
-            const top = anchor.y + (slot.y / length) * RADIUS;
+          {spot.frames.map((frame, index) => {
+            const point = layout.points[index];
+            const left = anchor.x + point.x;
+            const top = anchor.y + point.y;
             return (
               <button
                 key={frame.date}
                 type="button"
-                className="pointer-events-auto absolute w-[104px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/30 bg-[#071018] shadow-lg"
-                style={{ left, top }}
+                className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/30 bg-[#071018] shadow-lg"
+                style={{ left, top, width: layout.thumb }}
                 onClick={() => onEnlarge(frame)}
                 aria-label={`Open the ${frame.label} radar picture`}
               >
-                <img src={frame.src} alt="" className="h-[78px] w-full bg-[#071018] object-contain" />
+                <img src={frame.src} alt="" className="w-full bg-[#071018] object-contain" style={{ height: layout.thumb === 104 ? 78 : 58 }} />
                 <span className="block truncate px-1.5 pt-1 text-[10px] text-slate-100">{frame.label}</span>
                 <span className="block truncate px-1.5 pb-1 text-[9px] text-amber-100/90">
                   {weatherCaption(weather[frame.date]) || (weatherReady ? "weather unavailable" : "…")}
@@ -66,7 +87,7 @@ export function ShowcaseRing({
           })}
           <div
             className="pointer-events-auto absolute flex -translate-x-1/2 flex-col items-center gap-2"
-            style={{ left: anchor.x, top: anchor.y + RADIUS + 98 }}
+            style={{ left: anchor.x, top: anchor.y + lowest + layout.thumb / 2 + 46 }}
           >
             <div className="flex gap-2">
               <button

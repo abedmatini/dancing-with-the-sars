@@ -384,6 +384,476 @@
           "src": "/showcase/los-angeles/2026-11.jpg"
         }
       ]
+    },
+    {
+      "id": "pantanal",
+      "name": "Pantanal",
+      "region": "Brazil",
+      "lat": -17.6,
+      "lon": -57.5,
+      "story": "A grassland floodplain drying after the wet season.",
+      "frames": [
+        {
+          "date": "2026-06-21",
+          "label": "21 June 2026",
+          "src": "/showcase/pantanal/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-15",
+          "label": "15 July 2026",
+          "src": "/showcase/pantanal/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-10",
+          "label": "10 August 2026",
+          "src": "/showcase/pantanal/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-15",
+          "label": "15 September 2026",
+          "src": "/showcase/pantanal/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-19",
+          "label": "19 October 2026",
+          "src": "/showcase/pantanal/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "tonle-sap",
+      "name": "Tonle Sap",
+      "region": "Cambodia",
+      "lat": 12.9,
+      "lon": 104.1,
+      "story": "The lake fills with the monsoon and then starts to fall.",
+      "frames": [
+        {
+          "date": "2026-06-19",
+          "label": "19 June 2026",
+          "src": "/showcase/tonle-sap/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-13",
+          "label": "13 July 2026",
+          "src": "/showcase/tonle-sap/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-18",
+          "label": "18 August 2026",
+          "src": "/showcase/tonle-sap/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-16",
+          "label": "16 September 2026",
+          "src": "/showcase/tonle-sap/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-17",
+          "label": "17 October 2026",
+          "src": "/showcase/tonle-sap/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-03",
+          "label": "3 November 2026",
+          "src": "/showcase/tonle-sap/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "menindee",
+      "name": "Menindee Lakes",
+      "region": "Australia",
+      "lat": -32.4,
+      "lon": 142.4,
+      "story": "Inland lakes holding water or drying through winter and spring.",
+      "frames": [
+        {
+          "date": "2026-06-17",
+          "label": "17 June 2026",
+          "src": "/showcase/menindee/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-13",
+          "label": "13 July 2026",
+          "src": "/showcase/menindee/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-16",
+          "label": "16 August 2026",
+          "src": "/showcase/menindee/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-11",
+          "label": "11 September 2026",
+          "src": "/showcase/menindee/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-15",
+          "label": "15 October 2026",
+          "src": "/showcase/menindee/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "riau",
+      "name": "Riau",
+      "region": "Indonesia",
+      "lat": 0.6,
+      "lon": 101.9,
+      "story": "Peat swamp and plantation blocks, unlike a closed rainforest river.",
+      "frames": [
+        {
+          "date": "2026-06-21",
+          "label": "21 June 2026",
+          "src": "/showcase/riau/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-15",
+          "label": "15 July 2026",
+          "src": "/showcase/riau/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-11",
+          "label": "11 August 2026",
+          "src": "/showcase/riau/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-16",
+          "label": "16 September 2026",
+          "src": "/showcase/riau/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-19",
+          "label": "19 October 2026",
+          "src": "/showcase/riau/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "pine-island",
+      "name": "Pine Island Glacier",
+      "region": "Antarctica",
+      "lat": -75.2,
+      "lon": -100.0,
+      "story": "An Antarctic ice shelf, with rifts and retreat unlike a Greenland fjord glacier.",
+      "frames": [
+        {
+          "date": "2025-10-31",
+          "label": "31 October 2025",
+          "src": "/showcase/pine-island/2025-10.jpg"
+        },
+        {
+          "date": "2025-11-15",
+          "label": "15 November 2025",
+          "src": "/showcase/pine-island/2025-11.jpg"
+        },
+        {
+          "date": "2025-12-16",
+          "label": "16 December 2025",
+          "src": "/showcase/pine-island/2025-12.jpg"
+        },
+        {
+          "date": "2026-01-14",
+          "label": "14 January 2026",
+          "src": "/showcase/pine-island/2026-01.jpg"
+        },
+        {
+          "date": "2026-06-17",
+          "label": "17 June 2026",
+          "src": "/showcase/pine-island/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-14",
+          "label": "14 July 2026",
+          "src": "/showcase/pine-island/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-14",
+          "label": "14 August 2026",
+          "src": "/showcase/pine-island/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-14",
+          "label": "14 September 2026",
+          "src": "/showcase/pine-island/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-15",
+          "label": "15 October 2026",
+          "src": "/showcase/pine-island/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-01",
+          "label": "1 November 2026",
+          "src": "/showcase/pine-island/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "salar",
+      "name": "Salar de Atacama",
+      "region": "Chile",
+      "lat": -23.5,
+      "lon": -68.3,
+      "story": "Bright salt crust against dark brine ponds in the Atacama.",
+      "frames": [
+        {
+          "date": "2025-11-16",
+          "label": "16 November 2025",
+          "src": "/showcase/salar/2025-11.jpg"
+        },
+        {
+          "date": "2025-12-15",
+          "label": "15 December 2025",
+          "src": "/showcase/salar/2025-12.jpg"
+        },
+        {
+          "date": "2026-01-15",
+          "label": "15 January 2026",
+          "src": "/showcase/salar/2026-01.jpg"
+        },
+        {
+          "date": "2026-02-13",
+          "label": "13 February 2026",
+          "src": "/showcase/salar/2026-02.jpg"
+        },
+        {
+          "date": "2026-03-16",
+          "label": "16 March 2026",
+          "src": "/showcase/salar/2026-03.jpg"
+        },
+        {
+          "date": "2026-04-14",
+          "label": "14 April 2026",
+          "src": "/showcase/salar/2026-04.jpg"
+        },
+        {
+          "date": "2026-05-15",
+          "label": "15 May 2026",
+          "src": "/showcase/salar/2026-05.jpg"
+        },
+        {
+          "date": "2026-06-13",
+          "label": "13 June 2026",
+          "src": "/showcase/salar/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-14",
+          "label": "14 July 2026",
+          "src": "/showcase/salar/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-16",
+          "label": "16 August 2026",
+          "src": "/showcase/salar/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-14",
+          "label": "14 September 2026",
+          "src": "/showcase/salar/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-15",
+          "label": "15 October 2026",
+          "src": "/showcase/salar/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-04",
+          "label": "4 November 2026",
+          "src": "/showcase/salar/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "sundarbans",
+      "name": "Sundarbans",
+      "region": "Bangladesh",
+      "lat": 22.0,
+      "lon": 89.2,
+      "story": "Tidal mangrove creeks, unlike the inland haors.",
+      "frames": [
+        {
+          "date": "2026-06-20",
+          "label": "20 June 2026",
+          "src": "/showcase/sundarbans/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-19",
+          "label": "19 July 2026",
+          "src": "/showcase/sundarbans/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-14",
+          "label": "14 August 2026",
+          "src": "/showcase/sundarbans/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-17",
+          "label": "17 September 2026",
+          "src": "/showcase/sundarbans/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-13",
+          "label": "13 October 2026",
+          "src": "/showcase/sundarbans/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-06",
+          "label": "6 November 2026",
+          "src": "/showcase/sundarbans/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "aral-sea",
+      "name": "Aral Sea",
+      "region": "Kazakhstan / Uzbekistan",
+      "lat": 45.0,
+      "lon": 59.2,
+      "story": "Remnant water against the dry seabed.",
+      "frames": [
+        {
+          "date": "2026-06-19",
+          "label": "19 June 2026",
+          "src": "/showcase/aral-sea/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-15",
+          "label": "15 July 2026",
+          "src": "/showcase/aral-sea/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-15",
+          "label": "15 August 2026",
+          "src": "/showcase/aral-sea/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-16",
+          "label": "16 September 2026",
+          "src": "/showcase/aral-sea/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-14",
+          "label": "14 October 2026",
+          "src": "/showcase/aral-sea/2026-10.jpg"
+        }
+      ]
+    },
+    {
+      "id": "lena-delta",
+      "name": "Lena Delta",
+      "region": "Russia",
+      "lat": 72.4,
+      "lon": 126.6,
+      "story": "An arctic river delta as winter ice gives way to the summer floodplain. November 2025 through January 2026 are in the catalog, but not in the public daily pictures, so this set runs June through November 2026.",
+      "frames": [
+        {
+          "date": "2026-06-17",
+          "label": "17 June 2026",
+          "src": "/showcase/lena-delta/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-15",
+          "label": "15 July 2026",
+          "src": "/showcase/lena-delta/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-15",
+          "label": "15 August 2026",
+          "src": "/showcase/lena-delta/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-14",
+          "label": "14 September 2026",
+          "src": "/showcase/lena-delta/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-15",
+          "label": "15 October 2026",
+          "src": "/showcase/lena-delta/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-01",
+          "label": "1 November 2026",
+          "src": "/showcase/lena-delta/2026-11.jpg"
+        }
+      ]
+    },
+    {
+      "id": "kilauea",
+      "name": "Kilauea",
+      "region": "Hawaii, USA",
+      "lat": 19.4,
+      "lon": -155.3,
+      "story": "Rough new lava on the Big Island, against older forest and the coast. October 2025 has no public daily picture here, so the set starts in November.",
+      "frames": [
+        {
+          "date": "2025-11-15",
+          "label": "15 November 2025",
+          "src": "/showcase/kilauea/2025-11.jpg"
+        },
+        {
+          "date": "2025-12-14",
+          "label": "14 December 2025",
+          "src": "/showcase/kilauea/2025-12.jpg"
+        },
+        {
+          "date": "2026-01-14",
+          "label": "14 January 2026",
+          "src": "/showcase/kilauea/2026-01.jpg"
+        },
+        {
+          "date": "2026-02-12",
+          "label": "12 February 2026",
+          "src": "/showcase/kilauea/2026-02.jpg"
+        },
+        {
+          "date": "2026-03-15",
+          "label": "15 March 2026",
+          "src": "/showcase/kilauea/2026-03.jpg"
+        },
+        {
+          "date": "2026-04-20",
+          "label": "20 April 2026",
+          "src": "/showcase/kilauea/2026-04.jpg"
+        },
+        {
+          "date": "2026-05-14",
+          "label": "14 May 2026",
+          "src": "/showcase/kilauea/2026-05.jpg"
+        },
+        {
+          "date": "2026-06-12",
+          "label": "12 June 2026",
+          "src": "/showcase/kilauea/2026-06.jpg"
+        },
+        {
+          "date": "2026-07-13",
+          "label": "13 July 2026",
+          "src": "/showcase/kilauea/2026-07.jpg"
+        },
+        {
+          "date": "2026-08-18",
+          "label": "18 August 2026",
+          "src": "/showcase/kilauea/2026-08.jpg"
+        },
+        {
+          "date": "2026-09-16",
+          "label": "16 September 2026",
+          "src": "/showcase/kilauea/2026-09.jpg"
+        },
+        {
+          "date": "2026-10-17",
+          "label": "17 October 2026",
+          "src": "/showcase/kilauea/2026-10.jpg"
+        },
+        {
+          "date": "2026-11-10",
+          "label": "10 November 2026",
+          "src": "/showcase/kilauea/2026-11.jpg"
+        }
+      ]
     }
   ]
 }

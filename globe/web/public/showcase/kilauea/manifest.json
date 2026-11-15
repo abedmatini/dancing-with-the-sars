@@ -1,0 +1,75 @@
+{
+  "id": "kilauea",
+  "name": "Kilauea",
+  "region": "Hawaii, USA",
+  "lat": 19.4,
+  "lon": -155.3,
+  "story": "Rough new lava on the Big Island, against older forest and the coast. October 2025 has no public daily picture here, so the set starts in November.",
+  "frames": [
+    {
+      "date": "2025-11-15",
+      "label": "15 November 2025",
+      "src": "/showcase/kilauea/2025-11.jpg"
+    },
+    {
+      "date": "2025-12-14",
+      "label": "14 December 2025",
+      "src": "/showcase/kilauea/2025-12.jpg"
+    },
+    {
+      "date": "2026-01-14",
+      "label": "14 January 2026",
+      "src": "/showcase/kilauea/2026-01.jpg"
+    },
+    {
+      "date": "2026-02-12",
+      "label": "12 February 2026",
+      "src": "/showcase/kilauea/2026-02.jpg"
+    },
+    {
+      "date": "2026-03-15",
+      "label": "15 March 2026",
+      "src": "/showcase/kilauea/2026-03.jpg"
+    },
+    {
+      "date": "2026-04-20",
+      "label": "20 April 2026",
+      "src": "/showcase/kilauea/2026-04.jpg"
+    },
+    {
+      "date": "2026-05-14",
+      "label": "14 May 2026",
+      "src": "/showcase/kilauea/2026-05.jpg"
+    },
+    {
+      "date": "2026-06-12",
+      "label": "12 June 2026",
+      "src": "/showcase/kilauea/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-13",
+      "label": "13 July 2026",
+      "src": "/showcase/kilauea/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-18",
+      "label": "18 August 2026",
+      "src": "/showcase/kilauea/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-16",
+      "label": "16 September 2026",
+      "src": "/showcase/kilauea/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-17",
+      "label": "17 October 2026",
+      "src": "/showcase/kilauea/2026-10.jpg"
+    },
+    {
+      "date": "2026-11-10",
+      "label": "10 November 2026",
+      "src": "/showcase/kilauea/2026-11.jpg"
+    }
+  ]
+}

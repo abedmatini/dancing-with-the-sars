@@ -1,0 +1,35 @@
+{
+  "id": "menindee",
+  "name": "Menindee Lakes",
+  "region": "Australia",
+  "lat": -32.4,
+  "lon": 142.4,
+  "story": "Inland lakes holding water or drying through winter and spring.",
+  "frames": [
+    {
+      "date": "2026-06-17",
+      "label": "17 June 2026",
+      "src": "/showcase/menindee/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-13",
+      "label": "13 July 2026",
+      "src": "/showcase/menindee/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-16",
+      "label": "16 August 2026",
+      "src": "/showcase/menindee/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-11",
+      "label": "11 September 2026",
+      "src": "/showcase/menindee/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-15",
+      "label": "15 October 2026",
+      "src": "/showcase/menindee/2026-10.jpg"
+    }
+  ]
+}

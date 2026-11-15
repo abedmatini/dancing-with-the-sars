@@ -1,0 +1,35 @@
+{
+  "id": "pantanal",
+  "name": "Pantanal",
+  "region": "Brazil",
+  "lat": -17.6,
+  "lon": -57.5,
+  "story": "A grassland floodplain drying after the wet season.",
+  "frames": [
+    {
+      "date": "2026-06-21",
+      "label": "21 June 2026",
+      "src": "/showcase/pantanal/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-15",
+      "label": "15 July 2026",
+      "src": "/showcase/pantanal/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-10",
+      "label": "10 August 2026",
+      "src": "/showcase/pantanal/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-15",
+      "label": "15 September 2026",
+      "src": "/showcase/pantanal/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-19",
+      "label": "19 October 2026",
+      "src": "/showcase/pantanal/2026-10.jpg"
+    }
+  ]
+}
