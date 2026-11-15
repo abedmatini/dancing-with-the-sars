@@ -27,6 +27,7 @@ import { satelliteCzml } from "./satellites";
 import type { FlowPath, RiskGrid, SitePin } from "./types";
 import { windStrength, type WindField } from "./wind";
 
+const HOME_VIEW = { lon: 18, lat: -22, height: 21_000_000 };
 const ionToken = import.meta.env.VITE_CESIUM_ION_TOKEN;
 if (ionToken) Ion.defaultAccessToken = ionToken;
 
@@ -206,6 +207,7 @@ function GlobeEffects({
   onStopSpin,
   onPick,
   zoomStep,
+  homeStep,
 }: {
   basemap: "gibs" | "osm";
   pins: SitePin[];
@@ -219,6 +221,7 @@ function GlobeEffects({
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
   zoomStep: number;
+  homeStep: number;
 }) {
   const { viewer } = useCesium();
   const stopRef = useRef(onStopSpin);
@@ -230,7 +233,9 @@ function GlobeEffects({
 
   useEffect(() => {
     if (!viewer) return;
-    viewer.camera.setView({ destination: Cartesian3.fromDegrees(18, -22, 21000000) });
+    viewer.camera.setView({
+      destination: Cartesian3.fromDegrees(HOME_VIEW.lon, HOME_VIEW.lat, HOME_VIEW.height),
+    });
     viewer.scene.backgroundColor = Color.fromCssColorString("#071018");
     viewer.scene.globe.baseColor = Color.fromCssColorString("#102033");
     viewer.scene.globe.enableLighting = false;
@@ -281,6 +286,16 @@ function GlobeEffects({
       duration: 1.6,
     });
   }, [viewer, target, grid?.west, grid?.south, grid?.east, grid?.north]);
+
+  useEffect(() => {
+    if (!viewer || homeStep === 0) return;
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(HOME_VIEW.lon, HOME_VIEW.lat, HOME_VIEW.height),
+      orientation: { heading: 0, pitch: CesiumMath.toRadians(-90), roll: 0 },
+      duration: 1.4,
+    });
+  }, [viewer, homeStep]);
 
   const zoomSeen = useRef(zoomStep);
   useEffect(() => {
@@ -389,6 +404,7 @@ export function Earth({
   onStopSpin,
   onPick,
   zoomStep,
+  homeStep,
 }: {
   basemap: "gibs" | "osm";
   pins: SitePin[];
@@ -405,6 +421,7 @@ export function Earth({
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
   zoomStep: number;
+  homeStep: number;
 }) {
   const imagery = useMemo(() => baseLayer(basemap), [basemap]);
   const heat = useFadingHeat(grid);
@@ -450,6 +467,7 @@ export function Earth({
         onStopSpin={onStopSpin}
         onPick={onPick}
         zoomStep={zoomStep}
+        homeStep={homeStep}
       />
       {pins.map((site) => (
         <Entity
