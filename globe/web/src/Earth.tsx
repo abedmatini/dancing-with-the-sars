@@ -251,7 +251,7 @@ function GlobeEffects({
   showSatellites: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
-  onShowcase: () => void;
+  onShowcase: (id: string) => void;
   radarSpot: ShowcaseSpot | null;
   radarOpen: boolean;
   radarFly: number;
@@ -304,8 +304,8 @@ function GlobeEffects({
       stop();
       const picked = viewer.scene.pick(click.position);
       const entityId = picked?.id?.id;
-      if (entityId === "showcase:western-cape") {
-        showcaseRef.current();
+      if (typeof entityId === "string" && entityId.startsWith("showcase:")) {
+        showcaseRef.current(entityId.slice("showcase:".length));
         return;
       }
       const pin =
@@ -491,6 +491,7 @@ export function Earth({
   onStopSpin,
   onPick,
   onShowcase,
+  radarSpots,
   radarSpot,
   radarOpen,
   radarFly,
@@ -512,7 +513,8 @@ export function Earth({
   showRisk: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
-  onShowcase: () => void;
+  onShowcase: (id: string) => void;
+  radarSpots: ShowcaseSpot[];
   radarSpot: ShowcaseSpot | null;
   radarOpen: boolean;
   radarFly: number;
@@ -571,11 +573,12 @@ export function Earth({
         zoomStep={zoomStep}
         homeStep={homeStep}
       />
-      {radarSpot ? (
+      {radarSpots.map((spot) => (
         <Entity
-          id="showcase:western-cape"
-          name={radarSpot.name}
-          position={Cartesian3.fromDegrees(radarSpot.lon, radarSpot.lat, 80)}
+          key={spot.id}
+          id={`showcase:${spot.id}`}
+          name={spot.name}
+          position={Cartesian3.fromDegrees(spot.lon, spot.lat, 80)}
           billboard={{
             image: showcaseMarker,
             width: 64,
@@ -585,7 +588,7 @@ export function Earth({
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
           }}
           label={{
-            text: "Western Cape radar",
+            text: spot.name,
             font: "600 15px sans-serif",
             fillColor: Color.fromCssColorString("#f6c453"),
             outlineColor: Color.fromCssColorString("#041018"),
@@ -596,7 +599,7 @@ export function Earth({
             scaleByDistance: new NearFarScalar(2e5, 1, 1.2e7, 0.7),
           }}
         />
-      ) : null}
+      ))}
       {pins.map((site) => (
         <Entity
           key={site.id}

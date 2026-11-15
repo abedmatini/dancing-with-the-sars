@@ -77,8 +77,8 @@ export default function App() {
   const [flyKey, setFlyKey] = useState(0);
   const [zoomStep, setZoomStep] = useState(0);
   const [homeStep, setHomeStep] = useState(0);
-  const [radarSpot, setRadarSpot] = useState<ShowcaseSpot | null>(null);
-  const [radarOpen, setRadarOpen] = useState(false);
+  const [radarSpots, setRadarSpots] = useState<ShowcaseSpot[]>([]);
+  const [radarOpenId, setRadarOpenId] = useState<string | null>(null);
   const [radarFly, setRadarFly] = useState(0);
   const [radarAnchor, setRadarAnchor] = useState<{ x: number; y: number } | null>(null);
   const [enlarged, setEnlarged] = useState<ShowcaseFrame | null>(null);
@@ -93,7 +93,7 @@ export default function App() {
   const pins = useMemo(() => catalog?.groups.flatMap((group) => group.sites) ?? [], [catalog]);
 
   useEffect(() => {
-    void loadShowcase().then(setRadarSpot);
+    void loadShowcase().then(setRadarSpots);
   }, []);
 
   useEffect(() => {
@@ -273,44 +273,47 @@ export default function App() {
         onStopSpin={() => setSpinning(false)}
         zoomStep={zoomStep}
         homeStep={homeStep}
-        onShowcase={() => {
+        onShowcase={(id) => {
           setSpinning(false);
           setEnlarged(null);
-          setRadarOpen((open) => {
-            if (open) return false;
+          setReading("");
+          setRadarOpenId((current) => {
+            if (current === id) return null;
             setRadarFly((value) => value + 1);
-            return true;
+            return id;
           });
         }}
-        radarSpot={radarSpot}
-        radarOpen={radarOpen}
+        radarSpots={radarSpots}
+        radarSpot={radarSpots.find((spot) => spot.id === radarOpenId) ?? null}
+        radarOpen={radarOpenId !== null}
         radarFly={radarFly}
         onRadarAnchor={setRadarAnchor}
         onPick={(lat, lon) => {
           tourToken.current += 1;
           setTourLabel("");
-          setRadarOpen(false);
+          setRadarOpenId(null);
           setEnlarged(null);
           void openAt(lat, lon, null);
         }}
       />
-      {radarSpot ? (
+      {radarSpots.find((spot) => spot.id === radarOpenId) ? (
         <ShowcaseRing
-          spot={radarSpot}
-          anchor={radarOpen ? radarAnchor : null}
+          spot={radarSpots.find((spot) => spot.id === radarOpenId) as ShowcaseSpot}
+          anchor={radarAnchor}
           enlarged={enlarged}
           reading={reading}
           readingBusy={readingBusy}
           onEnlarge={setEnlarged}
           onCloseEnlarge={() => setEnlarged(null)}
           onClose={() => {
-            setRadarOpen(false);
+            setRadarOpenId(null);
             setEnlarged(null);
           }}
           onAsk={() => {
-            if (!radarSpot) return;
+            const spot = radarSpots.find((item) => item.id === radarOpenId);
+            if (!spot) return;
             setReadingBusy(true);
-            void readShowcase(radarSpot.id).then((result) => {
+            void readShowcase(spot.id).then((result) => {
               setReading(result.error ? result.error : result.answer);
               setReadingBusy(false);
             });

@@ -1,0 +1,35 @@
+{
+  "id": "manaus",
+  "name": "Manaus",
+  "region": "Brazil",
+  "lat": -3.1,
+  "lon": -59.9,
+  "story": "Forest standing in high water, then the flood dropping away.",
+  "frames": [
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/manaus/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/manaus/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-22",
+      "label": "22 August 2026",
+      "src": "/showcase/manaus/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-22",
+      "label": "22 September 2026",
+      "src": "/showcase/manaus/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-14",
+      "label": "14 October 2026",
+      "src": "/showcase/manaus/2026-10.jpg"
+    }
+  ]
+}

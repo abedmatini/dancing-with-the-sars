@@ -1,0 +1,35 @@
+{
+  "id": "luxor",
+  "name": "Luxor",
+  "region": "Egypt",
+  "lat": 25.7,
+  "lon": 32.6,
+  "story": "A thin irrigated river against empty desert.",
+  "frames": [
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/luxor/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/luxor/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-22",
+      "label": "22 August 2026",
+      "src": "/showcase/luxor/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-06",
+      "label": "6 September 2026",
+      "src": "/showcase/luxor/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-28",
+      "label": "28 October 2026",
+      "src": "/showcase/luxor/2026-10.jpg"
+    }
+  ]
+}

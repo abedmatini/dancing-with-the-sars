@@ -1,4 +1,4 @@
-"""Read the stored Western Cape radar pictures with Claude, when a key is set."""
+"""Read a stored NISAR showcase with Claude, when a key is set."""
 
 from __future__ import annotations
 
@@ -11,23 +11,30 @@ from fastapi import HTTPException
 from drought_monitor.assistant import DEFAULT_ANTHROPIC_MODEL, _post_json, _setting
 
 _PUBLIC = Path(__file__).resolve().parents[2] / "globe" / "web" / "public"
-_MANIFEST = _PUBLIC / "showcase" / "western-cape" / "manifest.json"
 
-_PROMPT = (
-    "These are public NISAR L2 radar browse pictures of the Western Cape, "
-    "South Africa, in date order. Green is vegetation. Gold and orange are "
-    "sparse or hard ground. Blue is a weak return, such as smooth water. "
-    "Empty dark ground means the satellite did not image that spot. "
-    "Say what stays the same and what changes across these months, in plain "
-    "language. Do not invent fires, floods, rainfall totals, or soil-moisture "
-    "numbers. This is not the NISAR soil-moisture product. Keep it under 150 words."
-)
+
+def _prompt(manifest: dict) -> str:
+    place = f"{manifest.get('name', 'this place')}, {manifest.get('region', '')}".strip().rstrip(",")
+    story = manifest.get("story") or "how the radar picture changes over these months"
+    return (
+        f"These are public NISAR L2 radar browse pictures of {place}, in date order. "
+        f"The story to look for is: {story} "
+        "Green is vegetation. Gold and orange are sparse or hard ground. "
+        "Blue is a weak return, such as smooth water or ice. "
+        "Empty dark ground means the satellite did not image that spot. "
+        "Say what stays the same and what changes across these months, in plain "
+        "language. Do not invent fires, floods, rainfall totals, or soil-moisture "
+        "numbers. This is not the NISAR soil-moisture product. Keep it under 150 words."
+    )
 
 
 def read_showcase(spot_id: str) -> dict:
-    if spot_id != "western-cape" or not _MANIFEST.is_file():
+    if not spot_id.replace("-", "").isalnum():
         raise HTTPException(status_code=404, detail="No radar showcase is stored for that place.")
-    manifest = json.loads(_MANIFEST.read_text())
+    manifest_path = _PUBLIC / "showcase" / spot_id / "manifest.json"
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=404, detail="No radar showcase is stored for that place.")
+    manifest = json.loads(manifest_path.read_text())
     frames = manifest.get("frames") or []
     if not frames:
         raise HTTPException(status_code=404, detail="No radar pictures are stored for that place.")
@@ -57,7 +64,7 @@ def read_showcase(spot_id: str) -> dict:
             }
         )
         content.append({"type": "text", "text": str(frame.get("label") or frame.get("date") or "")})
-    content.append({"type": "text", "text": _PROMPT})
+    content.append({"type": "text", "text": _prompt(manifest)})
     model = _setting("ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
     try:
         payload = _post_json(

@@ -1,0 +1,35 @@
+{
+  "id": "ilulissat",
+  "name": "Ilulissat Glacier",
+  "region": "Greenland",
+  "lat": 69.2,
+  "lon": -49.7,
+  "story": "Summer melt on ice, then the freeze returning.",
+  "frames": [
+    {
+      "date": "2026-06-28",
+      "label": "28 June 2026",
+      "src": "/showcase/ilulissat/2026-06.jpg"
+    },
+    {
+      "date": "2026-07-22",
+      "label": "22 July 2026",
+      "src": "/showcase/ilulissat/2026-07.jpg"
+    },
+    {
+      "date": "2026-08-22",
+      "label": "22 August 2026",
+      "src": "/showcase/ilulissat/2026-08.jpg"
+    },
+    {
+      "date": "2026-09-22",
+      "label": "22 September 2026",
+      "src": "/showcase/ilulissat/2026-09.jpg"
+    },
+    {
+      "date": "2026-10-28",
+      "label": "28 October 2026",
+      "src": "/showcase/ilulissat/2026-10.jpg"
+    }
+  ]
+}
