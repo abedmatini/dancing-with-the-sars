@@ -322,8 +322,7 @@ export default function App() {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-3 p-3 sm:p-4">
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <div className="rounded-2xl border border-white/10 bg-[#0c1522]/80 px-3 py-2 backdrop-blur">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/80">Dancing with the SARs</p>
-            <h1 className="text-base font-semibold sm:text-lg">Drought and runoff globe</h1>
+            <h1 className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/80">Dancing with the SARs</h1>
           </div>
           <button
             type="button"

@@ -23,7 +23,7 @@ Publish the 3D globe in this repository to Cursor Apps. Do not modify the Stream
    PORT="$PORT" bash scripts/start_globe.sh
    That serves globe/web/dist on $PORT. Leave the Procfile `web` entry pointed at scripts/start_static.sh.
 
-4. Open the published URL and confirm the page loads: a dark globe, the title "Drought and runoff globe", and a Guided tour button. Also open /health.html and confirm the body says ok.
+4. Open the published URL and confirm the page loads: a dark globe, the title "Dancing with the SARs", and a Guided tour button. Also open /health.html and confirm the body says ok.
 
 5. Reply with the public URL. Do not change application code unless the build itself fails.
 ```
