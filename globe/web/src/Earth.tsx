@@ -22,7 +22,7 @@ import {
 } from "cesium";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Entity, useCesium, Viewer } from "resium";
-import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, soilProvider } from "./imagery";
+import { baseLayer, detailProvider, fireProvider, MODIS_TRUE_COLOR_DATES, modisProvider, NISAR_SAR_DATES, sarProvider, soilProvider } from "./imagery";
 import { satelliteCzml } from "./satellites";
 import type { ShowcaseSpot } from "./showcase";
 import type { RiskGrid, SitePin } from "./types";
@@ -172,6 +172,7 @@ function GlobeEffects({
   showDaily,
   showFire,
   showSoil,
+  showSar,
   showSatellites,
   onStopSpin,
   onPick,
@@ -191,6 +192,7 @@ function GlobeEffects({
   showDaily: boolean;
   showFire: boolean;
   showSoil: boolean;
+  showSar: boolean;
   showSatellites: boolean;
   onStopSpin: () => void;
   onPick: (lat: number, lon: number) => void;
@@ -337,11 +339,19 @@ function GlobeEffects({
       layer.alpha = 0.55;
       added.push(layer);
     }
+    if (showSar) {
+      // Transparent where NISAR did not pass, so the photo, clouds, and soil stay visible beside the swath.
+      for (const date of NISAR_SAR_DATES) {
+        const layer = viewer.imageryLayers.addImageryProvider(sarProvider(date));
+        layer.alpha = 0.82;
+        added.push(layer);
+      }
+    }
     return () => {
       if (viewer.isDestroyed()) return;
       for (const layer of added) viewer.imageryLayers.remove(layer, true);
     };
-  }, [viewer, showDaily, showFire, showSoil]);
+  }, [viewer, showDaily, showFire, showSoil, showSar]);
 
   useEffect(() => {
     if (!viewer) return;
@@ -443,6 +453,7 @@ export function Earth({
   showDaily,
   showFire,
   showSoil,
+  showSar,
   showSatellites,
   showRisk,
   onStopSpin,
@@ -464,6 +475,7 @@ export function Earth({
   showDaily: boolean;
   showFire: boolean;
   showSoil: boolean;
+  showSar: boolean;
   showSatellites: boolean;
   showRisk: boolean;
   onStopSpin: () => void;
@@ -508,6 +520,7 @@ export function Earth({
         showDaily={showDaily}
         showFire={showFire}
         showSoil={showSoil}
+        showSar={showSar}
         showSatellites={showSatellites}
         onStopSpin={onStopSpin}
         onPick={onPick}

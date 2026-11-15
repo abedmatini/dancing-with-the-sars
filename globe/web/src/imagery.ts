@@ -11,6 +11,8 @@ const TRUE_COLOR_DATE = "2026-10-15";
 // One MODIS day leaves black gaps between orbits. Earlier days cover those gaps.
 export const MODIS_TRUE_COLOR_DATES = ["2026-10-13", "2026-10-14", TRUE_COLOR_DATE];
 const SOIL_DATE = "2026-05-16";
+// Public NISAR radar browse. 14 and 15 October sit with the cloud pictures; 2 November fills Cape Town.
+export const NISAR_SAR_DATES = ["2026-10-14", "2026-10-15", "2026-11-02"];
 const mercator = () => new WebMercatorTilingScheme();
 const credit = (text: string) => new Credit(text);
 
@@ -64,6 +66,16 @@ export function fireProvider(): WebMapServiceImageryProvider {
     credit: credit("NASA GIBS · MODIS Terra thermal anomalies"),
     maximumLevel: 5,
     enablePickFeatures: false,
+  });
+}
+
+/** NISAR L2 polarimetric picture. Empty tiles are transparent, so it sits on the other imagery. */
+export function sarProvider(date: string): UrlTemplateImageryProvider {
+  return new UrlTemplateImageryProvider({
+    url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/NISAR_L2_Geocoded_Polarimetric_Covariance/default/${date}/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png`,
+    credit: credit(`NASA GIBS · NISAR L2 radar ${date}`),
+    tilingScheme: mercator(),
+    maximumLevel: 10,
   });
 }
 

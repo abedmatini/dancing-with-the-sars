@@ -65,6 +65,7 @@ export default function App() {
   const [showDaily, setShowDaily] = useState(false);
   const [showFire, setShowFire] = useState(false);
   const [showSoil, setShowSoil] = useState(false);
+  const [showSar, setShowSar] = useState(false);
   const [showSatellites, setShowSatellites] = useState(true);
   const [showRisk, setShowRisk] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -256,6 +257,7 @@ export default function App() {
         showDaily={showDaily}
         showFire={showFire}
         showSoil={showSoil}
+        showSar={showSar}
         onStopSpin={() => setSpinning(false)}
         zoomStep={zoomStep}
         homeStep={homeStep}
@@ -416,6 +418,9 @@ export default function App() {
           </LayerButton>
           <LayerButton on={showSoil} activeClass="bg-lime-300 text-slate-950" onClick={() => setShowSoil((value) => !value)}>
             Soil moisture
+          </LayerButton>
+          <LayerButton on={showSar} activeClass="bg-emerald-300 text-slate-950" onClick={() => setShowSar((value) => !value)}>
+            SAR
           </LayerButton>
           <LayerButton
             on={showSatellites}

@@ -15,6 +15,15 @@ export function MapKey() {
           <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-orange-500" aria-hidden />
           <span>Fires: one orange mark means MODIS saw a hot spot. It is not a yellow-to-red strength scale.</span>
         </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-0.5 flex shrink-0 gap-1" aria-hidden>
+            <span className="h-3 w-3 rounded-sm bg-emerald-500" />
+            <span className="h-3 w-3 rounded-sm bg-amber-400" />
+          </span>
+          <span>
+            SAR: a green and gold strip is a NISAR radar pass on 14 Oct, 15 Oct, or 2 Nov 2026. It lies on the other pictures. Blank land means no pass those days. These colors are radar, not the risk scale and not soil-moisture numbers.
+          </span>
+        </li>
       </ul>
       <p className="mt-2 text-slate-400">Click a gold radar pin for its pictures, or anywhere on the Earth to open a 5 km study box.</p>
     </aside>
